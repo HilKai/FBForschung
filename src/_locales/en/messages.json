@@ -1,0 +1,14 @@
+{
+  "appName": {
+    "message": "Facebook Datenspende",
+    "description": "The name of the extension."
+  },
+  "appDescription": {
+    "message": "Freiwillige Datenspende für das Projekt ",
+    "description": "The description of the extension."
+  },
+  "btnTooltip": {
+    "message": "Facebook Datenspende",
+    "description": "Tooltip for the button."
+  }
+}
