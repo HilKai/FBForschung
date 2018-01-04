@@ -265,6 +265,7 @@ function isEmpty(obj) {
 }
 
 
+
 /* 
  * Processes the user-feed
  * @Param config - config used to evaluate the feed
@@ -293,6 +294,7 @@ function processFeed(config,domNode, currentObject){
               post = processFeed(selectors[e],selectedDomNodes[i], post);
             }
             if (!isEmpty(post)){
+                post['position_ordinal'] = i+1;
                 currentObject.posts.push(post);
             }
          } else {
