@@ -4,6 +4,19 @@ var axios = require('axios');
 var CryptoJS = require("crypto-js");
 var configTrees = [];
 var nextMessage;
+var configPlace = "config";
+
+storage.get("usingDevConfig",function(resp){
+   if (resp){
+       if (resp.usingDevConfig == true){
+           configPlace = "devconfig";
+       }
+   } 
+});
+
+
+
+
 
 
 /*watches for the first install */
@@ -22,6 +35,33 @@ install_notice();
 function checkIfMessageUpdate(){
     getRequest('https://fbforschung.de/message',null,handleMessageCheck);    
 }
+
+
+function isUsingDevConfig(){
+    if (configPlace == "devconfig"){
+        return true;       
+    }else{
+        return false;
+    }
+}
+
+function getDevConfig(){
+    getRequest("https://fbforschung.de/config/dev",null,parseConfig);
+};
+
+
+function handleOptionCall(resp){
+    storage.get(configPlace,function(response){
+
+        var version = response.config.version;
+
+        var isDev = isUsingDevConfig();
+        var call = {version:version,
+              isdevConfig:isDev}
+        resp(call);
+    });
+}
+
 
 
 /* forwards a Message as E-Mail
@@ -106,20 +146,35 @@ function handleMessageCheck(data){
 }
 
 /* quick check using the config.version to see if the Plugin config is still up to date */
-function checkIfConfigUptoDate(){
-     storage.get('config',function(resp){
-        var config = resp.config;  
-        if (config){
-            getRequest('https://fbforschung.de/config/'+config.version,null,handleConfigCheck);  
-        } else {
-            getConfig();
-        }
-     });
+function checkIfConfigUptoDate(){  
+    if (isUsingDevConfig()){
+        storage.get('devconfig',function(resp){
+            var config = resp.config;
+            if (config){
+                getRequest('https://fbforschung.de/config/dev/'+config.version,null,handleConfigCheck);
+            } else {
+                getDevConfig();
+            }
+            });
+    } else {
+        storage.get('config',function(resp){
+            var config = resp.config;
+            if (config){
+                getRequest('https://fbforschung.de/config/'+config.version,null,handleConfigCheck); 
+            } else {
+                getConfig;
+            }
+        });
+    }
 }
                             
 function handleConfigCheck(data){
     if (data.is_latest_version == false){
-        getConfig();
+        if (isUsingDevConfig){
+            getDevConfig();
+        } else {
+            getConfig();
+        }
     }
 }
 
@@ -130,10 +185,10 @@ ext.runtime.onMessage.addListener(
     function(request, sender, sendResponse) { 
         switch(request.action){
             case "process-config":
-               storage.get('config',function(resp){
+                storage.get(configPlace,function(resp){
                     var config = resp.config;
                     parseConfig(config);
-                    sendResponse(configTrees);
+                    sendResponse(configTrees);   
                 });
                 break;
             case "register":
@@ -141,9 +196,8 @@ ext.runtime.onMessage.addListener(
                 sendResponse("bye");
                 break;
             case "process-feed":
-                console.log("proccesing feed");
-                storage.get('config',function(resp){
-                    var config = resp.config;  
+                storage.get(configPlace,function(resp){
+                var config = resp.config;
                     var scrolledUntil = request.scrolledUntil;
                     if (config){
                         var div = document.createElement("div");
@@ -176,6 +230,25 @@ ext.runtime.onMessage.addListener(
             case "getPopupMessage":                 //a popup will request the newest message
                 sendResponse(nextMessage);
                 break;
+                
+            case "getOption":
+               
+                handleOptionCall(sendResponse);
+                return true;
+                       
+                    
+    
+                break;
+            case "setDevConfigStatus":
+                console.log(request);
+                if (request.devConfig == true){
+                    configPlace = "devconfig";
+                } else {
+                    configPlace = "config";
+                }
+                storage.set({usingDevConfig:request.devConfig},function(){});
+                checkIfConfigUptoDate();
+                
             case "markRead":
                 MessageResponse({mark_read:request.uid});
                 break;
@@ -207,51 +280,52 @@ function sendFeedToServer(feed,scrolledUntil,sessionID){
     
     var manifestData = ext.runtime.getManifest();    
     feed['plugin_version'] = manifestData.version;
-    storage.get('config',function(resp){
-        var version = resp.config.version;  
+    storage.get(configPlace,function(resp){
+        var config = resp.config;
+        var version = config.version;  
         if (version){
             feed['config_version'] = version;
         }
-    });
-	
-	feed['browser']= navigator.userAgent;
-	feed['language']= navigator.language;
-	feed['scrolled_until'] = scrolledUntil;
-    
-    storage.get('identifier_password',function(resp){
-        var password = resp.identifier_password;  
-        if (password){
-            storage.get('plugin_uid',function(resp){
-                var plugin_uid = resp.plugin_uid;  
-                if (plugin_uid){
-                    var sNonce = CryptoJS.lib.WordArray.random(16).toString();
-                    var sBody = feed;
-                    var sUrl = 'https://fbforschung.de/posts'; //serverside url to call
-                    const request= axios.post(sUrl,sBody,
-                    { headers:{
-                        "X-Auth-Key" : sNonce,
-                        "X-Auth-Checksum":CryptoJS.HmacSHA1(sUrl + JSON.stringify(sBody) +  sNonce, password).toString(),
-                        "X-Auth-Plugin" : plugin_uid,
-                        "Content-Type" : "application/json"
-                    }});
-                    request.then((response)=>{
-                        var timestamp = new Date();
-                        timestamp = timestamp.toString();
-                        storage.set({session_uid:response.data.result['uid'],
-                                     session_date: timestamp},function(){      
-                        });
-                    });
-                    request.catch(error => {
-                        var timestamp = new Date();
-                        timestamp = timestamp.toString();
-                        storage.set({toBeSent:feed,
-                                     createdAt: timestamp},function(){      
-                        });   
-                    });
-                }
-            });  
-        }
 
+
+        feed['browser']= navigator.userAgent;
+        feed['language']= navigator.language;
+        feed['scrolled_until'] = scrolledUntil;
+
+        storage.get('identifier_password',function(resp){
+            var password = resp.identifier_password;  
+            if (password){
+                storage.get('plugin_uid',function(resp){
+                    var plugin_uid = resp.plugin_uid;  
+                    if (plugin_uid){
+                        var sNonce = CryptoJS.lib.WordArray.random(16).toString();
+                        var sBody = feed;
+                        var sUrl = 'https://fbforschung.de/posts'; //serverside url to call
+                        const request= axios.post(sUrl,sBody,
+                        { headers:{
+                            "X-Auth-Key" : sNonce,
+                            "X-Auth-Checksum":CryptoJS.HmacSHA1(sUrl + JSON.stringify(sBody) +  sNonce, password).toString(),
+                            "X-Auth-Plugin" : plugin_uid,
+                            "Content-Type" : "application/json"
+                        }});
+                        request.then((response)=>{
+                            var timestamp = new Date();
+                            timestamp = timestamp.toString();
+                            storage.set({session_uid:response.data.result['uid'],
+                                         session_date: timestamp},function(){      
+                            });
+                        });
+                        request.catch(error => {
+                            var timestamp = new Date();
+                            timestamp = timestamp.toString();
+                            storage.set({toBeSent:feed,
+                                         createdAt: timestamp},function(){      
+                            });   
+                        });
+                    }
+                });  
+            }
+        });
     });
      
 }
@@ -390,8 +464,9 @@ function restRegister(){
                 }});
               request.then((response)=>{
                   storage.set({plugin_uid:response.data.result['uid']},function(){
+                    storage.set({usingDevConfig:false},function(){});
                     getConfig();   
-                    checkIfMessageUpdate()
+                    checkIfMessageUpdate();
                   });
               });
               request.catch(error => {
@@ -477,8 +552,15 @@ function restGET(_nPlugin, _sUrl,_sPassword, _fCallback, _sBody) {
 * Saves standart Config to local Storage
 */
 function parseConfig(config){
+    
+    var isUsingdev = isUsingDevConfig();
+    if (isUsingdev == true){
+         storage.set({devconfig:config.result},function(){
+         });    
+    } else {
     storage.set({config:config.result},function(){
          });
+    }
 }
 
 

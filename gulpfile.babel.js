@@ -130,6 +130,7 @@ function buildJS(target) {
     'background.js',
     'contentscript.js',
     'registration.js',
+    'options.js',
     'popup.js',
     'livereload.js'
   ]
