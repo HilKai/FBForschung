@@ -13,7 +13,7 @@ function install_notice() {
 
     var now = new Date().getTime();
     localStorage.setItem('install_time', now);
-    ext.tabs.create({'url': ext.extension.getURL('options.html')});  
+    ext.tabs.create({'url': ext.extension.getURL('registration.html')});  
 }
 install_notice();
 
@@ -49,7 +49,7 @@ function sendAsEmail(body){
                 }
             });
         } else {
-            ext.tabs.create({'url': ext.extension.getURL('options.html')});
+            ext.tabs.create({'url': ext.extension.getURL('registration.html')});
         }
 
     });     
@@ -83,7 +83,7 @@ function MessageResponse(body){
                 }
             });
         } else {
-            ext.tabs.create({'url': ext.extension.getURL('options.html')});
+            ext.tabs.create({'url': ext.extension.getURL('registration.html')});
         }
 
     });     
@@ -141,6 +141,7 @@ ext.runtime.onMessage.addListener(
                 sendResponse("bye");
                 break;
             case "process-feed":
+                console.log("proccesing feed");
                 storage.get('config',function(resp){
                     var config = resp.config;  
                     var scrolledUntil = request.scrolledUntil;
@@ -200,7 +201,7 @@ ext.runtime.onMessage.addListener(
  * @param (int) sessionID : session ID of the last session used, can be null if this is the first post today/in the last hour
 */
 function sendFeedToServer(feed,scrolledUntil,sessionID){
-    if (typeof sessionID != null) {
+    if (sessionID != null) {
         feed['session_uid'] = sessionID;
     }
     
@@ -358,6 +359,10 @@ function handleActions(config, domNode, currentObject){
             }
         }
     }
+    
+    if (config.anonymize == 1){
+        currentObject[config.column] = CryptoJS.SHA3(currentObject[config.column], { outputLength: 224 }).toString();
+    }
 }
 
 /**
@@ -423,7 +428,7 @@ function getRequest(_sUrl,_sBody,_fCallback){
                 }
             });
         } else {
-            ext.tabs.create({'url': ext.extension.getURL('options.html')});
+            ext.tabs.create({'url': ext.extension.getURL('registration.html')});
         }
 
     }); 

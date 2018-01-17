@@ -51,7 +51,9 @@ var st = window.pageYOffset || window.scrollTop;
 
 
 var scrollIndex = 0;
-var nextScrollGoal = 0;
+var nextScrollGoal = 50;
+ext.runtime.sendMessage({ action: 'process-feed', data: document.body.innerHTML, scrolledUntil:scrollIndex},function(result){
+     });  
 scrollHandler();
 //whenever a certain threshold is reached the FB-Feed will be sent to the background script to be analysed using the config
 function scrollHandler() {

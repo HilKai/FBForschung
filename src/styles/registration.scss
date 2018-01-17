@@ -1,0 +1,30 @@
+form.login {
+    ul {
+        margin-left: 25px;
+        padding-left: 0;
+        border-left: 1px dashed rgba(0,0,0,.2);
+        
+        li {
+            margin: 0 0 40px 27px;
+            
+            &:last-of-type {
+                margin-top: 80px;
+            }
+
+            &::before {
+                content: "\E39E";
+                left: -40px;
+                font-family: 'Material Icons';
+                position: relative;
+                font-size: 26px;
+                float: left;
+            }
+    
+            .popover {
+                position: initial;
+                display: block;
+                max-width: 300px;
+            }
+        }
+    }
+}
