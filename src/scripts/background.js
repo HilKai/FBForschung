@@ -132,7 +132,7 @@ function MessageResponse(body){
 /* takes the first Message to be shown and creates the popup for it */
 function handleMessageCheck(data){
     const WIDTH = 440;
-    const HEIGHT = 220;
+    const HEIGHT = 300;
     if (data.result.length > 0){
         nextMessage = data.result[0];
         function callback(tabs){

@@ -21,6 +21,15 @@ document.getElementById("ReadButton").onclick= function markRead(){
     close();
 }
 
+
+document.getElementById("showEmailInput").onclick = function toggelEmail(){
+    if (document.getElementById("EmailRow").style.visibility == 'hidden'){
+        document.getElementById("EmailRow").style.visibility = 'visible'; 
+    } else {
+        document.getElementById("EmailRow").style.visibility = 'hidden'; 
+    }
+}
+
 //marks this message to be emailed to the adress given
 document.getElementById("EmailButton").onclick= function sendAsEmail(){
     ext.runtime.sendMessage({action:"emailThis", 
