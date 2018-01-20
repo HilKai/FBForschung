@@ -395,41 +395,46 @@ function handleActions(config, domNode, currentObject){
             var dataObjStr = config.attribute.substr(5,config.attribute.length-5);
             currentObject[config.column] = domNode.dataset.dataObjStr;   
         } else {
-            switch (config.attribute) {
-                case 'text':
-                    currentObject[config.column] = domNode.innerText;
-                    break;
-                case 'html':
-                    currentObject[config.column] = domNode.innerHTML;
-                    break;   
-                case 'exists':
-                    currentObject[config.column] = true;
-                    break;
-                case 'count':
-                    if (currentObject.hasOwnProperty(config.column)) {
-                        currentObject[config.column] ++;
-                    } else {
-                        currentObject[config.column] = 0;
-                    }
-                    break;
-                case 'width':
-                    currentObject[config.column] = domNode.getBoundingClientRect().width;
-                    break;
+            if (config.attribute.startsWith("static-")){
+                var dataObjStr = config.attribute.substr(7,config.attribute.length-7);
+                currentObject[config.column] = domNode.dataset.dataObjStr;   
+            } else {
+                switch (config.attribute) {
+                    case 'text':
+                        currentObject[config.column] = domNode.innerText;
+                        break;
+                    case 'html':
+                        currentObject[config.column] = domNode.innerHTML;
+                        break;   
+                    case 'exists':
+                        currentObject[config.column] = true;
+                        break;
+                    case 'count':
+                        if (currentObject.hasOwnProperty(config.column)) {
+                            currentObject[config.column] ++;
+                        } else {
+                            currentObject[config.column] = 0;
+                        }
+                        break;
+                    case 'width':
+                        currentObject[config.column] = domNode.getBoundingClientRect().width;
+                        break;
 
-                case 'height':
-                    currentObject[config.column] = domNode.getBoundingClientRect().height;
-                    break;
+                    case 'height':
+                        currentObject[config.column] = domNode.getBoundingClientRect().height;
+                        break;
 
-                case 'top':
-                    currentObject[config.column] = domNode.getBoundingClientRect().top;
-                    break;
+                    case 'top':
+                        currentObject[config.column] = domNode.getBoundingClientRect().top;
+                        break;
 
-                case 'left':
-                    currentObject[config.column] = domNode.getBoundingClientRect().left;
-                    break;
+                    case 'left':
+                        currentObject[config.column] = domNode.getBoundingClientRect().left;
+                        break;
 
-                default:
-                    break;
+                    default:
+                        break;
+                }
             }
         }
     }
