@@ -7,6 +7,17 @@ var CryptoJS = require("crypto-js");
 
  ext.runtime.sendMessage({ action: 'opened-facebook', data: document.body.innerHTML, scrolledUntil:scrollIndex},function(result){}); // messages the background page to update various data, like messages and config
 
+ext.runtime.onMessage.addListener(
+  function(request, sender, sendResponse) {
+    if (request.greeting == "getRect"){
+        var response = {id: request.id,
+                        rect:document.getElementById(request.id).getBoundingClientRect(),
+                        body: document.body.getBoundingClientRect()}
+      sendResponse(response);
+    }
+  });
+
+
 document.head.appendChild(document.createElement('script')).text = '(' +
     function () {
         // injected DOM script is not a content script anymore, 
@@ -60,7 +71,8 @@ function scrollHandler() {
     scrollIndex += 1;
     if (scrollIndex >= nextScrollGoal) {
         nextScrollGoal += 50;
-        ext.runtime.sendMessage({ action: 'process-feed', data: document.body.innerHTML, scrolledUntil:scrollIndex},function(result){
+        
+        ext.runtime.sendMessage({ action: 'process-feed', data: document.body.innerHTML, scrolledUntil:document.body.getBoundingClientRect().top *(-1)},function(result){
      });  
     }
 }

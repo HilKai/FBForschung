@@ -18,7 +18,11 @@ optionsLink.addEventListener("click", function(e) {
                            document.getElementById('eye').value;
   storage.set({identifier_password:hashedPass,identifier_human:human},function(){
      ext.runtime.sendMessage({ action: 'register' },function(result){
-         close();
+        if (result.worked == true){
+            close();
+        } else {
+            alert('Etwas ist schief gegangen.')
+        }
      });    
 });
 })

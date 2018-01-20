@@ -5,6 +5,8 @@ var CryptoJS = require("crypto-js");
 var configTrees = [];
 var nextMessage;
 var configPlace = "config";
+var rectRequestAwaiting = 0;
+var processedFeed  ={};
 
 storage.get("usingDevConfig",function(resp){
    if (resp){
@@ -12,6 +14,13 @@ storage.get("usingDevConfig",function(resp){
            configPlace = "devconfig";
        }
    } 
+});
+
+storage.get('plugin_uid',function(resp){
+    var plugin_uid = resp.plugin_uid;  
+    if (!plugin_uid){
+        ext.tabs.create({'url': ext.extension.getURL('registration.html')});     
+    }   
 });
 
 
@@ -179,6 +188,48 @@ function handleConfigCheck(data){
 }
 
 
+function sendRecRequest(id){
+    console.log("requestRect");
+    rectRequestAwaiting++;
+    ext.tabs.query({active: true, currentWindow: true}, function(tabs) {
+      ext.tabs.sendMessage(tabs[0].id, {greeting: "getRect", id: id}, function(response) {
+          console.log(response);
+          handleRecRequest(response.id,response.rect,response.body);
+        
+      });
+    });
+    
+}
+
+
+function handleRecRequest(id,Clientrect,bodyRect){
+   
+    var proccessedFeedasString =  JSON.stringify(processedFeed);
+    proccessedFeedasString = proccessedFeedasString.replace(id+"top",Clientrect.top-bodyRect.top);
+    proccessedFeedasString = proccessedFeedasString.replace(id+"width",Clientrect.width);
+    proccessedFeedasString = proccessedFeedasString.replace(id+"height",Clientrect.height);
+    proccessedFeedasString = proccessedFeedasString.replace(id+"left",Clientrect.left);
+    processedFeed = JSON.parse(proccessedFeedasString);
+    
+    rectRequestAwaiting--;
+    if (rectRequestAwaiting == 0){
+         storage.get('session_uid',function(resp){
+            var sessionID = resp.session_uid;  
+            storage.get('session_date',function(resp){
+                var session_date = new Date(resp.session_date);
+                if ((sessionID) && ( ((new Date) - session_date) < (60 * 60 * 1000))){ //eine Stunde Abstand
+                    sendFeedToServer(processedFeed,scrolledUntil,sessionID);
+                } else {
+                    sendFeedToServer(processedFeed,scrolledUntil,null);  
+                }
+            });
+        });
+    }
+    
+    
+}
+
+
 /* Main Messaging centrum of the Extension, all requests get directed to here */
 
 ext.runtime.onMessage.addListener(
@@ -192,8 +243,8 @@ ext.runtime.onMessage.addListener(
                 });
                 break;
             case "register":
-                restRegister();
-                sendResponse("bye");
+                restRegister(sendResponse);
+                return true;
                 break;
             case "process-feed":
                 storage.get(configPlace,function(resp){
@@ -202,19 +253,8 @@ ext.runtime.onMessage.addListener(
                     if (config){
                         var div = document.createElement("div");
                         div.innerHTML = request.data;
-                        var processedFeed = {};
+                        rectRequestAwaiting = 0;
                         processedFeed = processFeed(config.selectors,div, processedFeed);
-                        storage.get('session_uid',function(resp){
-                            var sessionID = resp.session_uid;  
-                            storage.get('session_date',function(resp){
-                                var session_date = new Date(resp.session_date);
-                                if ((sessionID) && ( ((new Date) - session_date) < (60 * 60 * 1000))){ //eine Stunde Abstand
-                                    sendFeedToServer(processedFeed,scrolledUntil,sessionID);
-                                } else {
-                                    sendFeedToServer(processedFeed,scrolledUntil,null);  
-                                }
-                            });
-                        });
                     }else{
                         console.log("something went wrong");
                     }
@@ -232,12 +272,8 @@ ext.runtime.onMessage.addListener(
                 break;
                 
             case "getOption":
-               
                 handleOptionCall(sendResponse);
                 return true;
-                       
-                    
-    
                 break;
             case "setDevConfigStatus":
                 console.log(request);
@@ -370,6 +406,8 @@ function processFeed(config,domNode, currentObject){
             }
             if (!isEmpty(post)){
                 post['position_ordinal'] = i+1;
+                post['position_onscreen'] = selectedDomNodes[i].id + "top";
+                sendRecRequest(selectedDomNodes[i].id);
                 currentObject.posts.push(post);
             }
          } else {
@@ -417,19 +455,22 @@ function handleActions(config, domNode, currentObject){
                         }
                         break;
                     case 'width':
-                        currentObject[config.column] = domNode.getBoundingClientRect().width;
+                        currentObject[config.column] = domNode.id + "width";
+                        sendRecRequest(domNode.id);
                         break;
-
                     case 'height':
-                        currentObject[config.column] = domNode.getBoundingClientRect().height;
+                        currentObject[config.column] = domNode.id + "height";
+                        sendRecRequest(domNode.id);
                         break;
 
                     case 'top':
-                        currentObject[config.column] = domNode.getBoundingClientRect().top;
+                        currentObject[config.column] = domNode.id + "top";
+                        sendRecRequest(domNode.id);
                         break;
 
                     case 'left':
-                        currentObject[config.column] = domNode.getBoundingClientRect().left;
+                        currentObject[config.column] = domNode.id + "left";
+                        sendRecRequest(domNode.id);
                         break;
 
                     default:
@@ -449,7 +490,7 @@ function handleActions(config, domNode, currentObject){
  * 
  * 
  */
-function restRegister(){
+function restRegister(responseFunction){
     storage.get('identifier_password',function(resp){
     var password = resp.identifier_password;  
     if (password){
@@ -470,21 +511,24 @@ function restRegister(){
               request.then((response)=>{
                   storage.set({plugin_uid:response.data.result['uid']},function(){
                     storage.set({usingDevConfig:false},function(){});
+                    responseFunction({worked:true});
                     getConfig();   
                     checkIfMessageUpdate();
                   });
               });
               request.catch(error => {
+                responseFunction({worked:false});
                 if (error.response.status === 403){
                     getConfig();
                 } else {
+
                     return Promise.reject(error.response);
                 }
               });
             }
         });  
     }
-});
+    });
 }
 
 /* gets the newest Config */
@@ -507,8 +551,6 @@ function getRequest(_sUrl,_sBody,_fCallback){
                     restGET(plugin_uid,_sUrl,password,_fCallback,_sBody);
                 }
             });
-        } else {
-            ext.tabs.create({'url': ext.extension.getURL('registration.html')});
         }
 
     }); 
