@@ -4,9 +4,12 @@ var axios = require('axios');
 var CryptoJS = require("crypto-js");
 var configTrees = [];
 var nextMessage;
+var rawMessages;
 var configPlace = "config";
 var rectRequestAwaiting = 0;
 var processedFeed  ={};
+var lastScrolledUntil = 0;
+var plugin_active = true;
 
 storage.get("usingDevConfig",function(resp){
    if (resp){
@@ -22,7 +25,6 @@ storage.get('plugin_uid',function(resp){
         ext.tabs.create({'url': ext.extension.getURL('registration.html')});     
     }   
 });
-
 
 
 
@@ -68,6 +70,24 @@ function handleOptionCall(resp){
         var call = {version:version,
               isdevConfig:isDev}
         resp(call);
+    });
+}
+
+function handleInformationCall(resp){
+    checkIfMessageUpdate();
+    storage.get(configPlace,function(response){
+        var version = response.config.version;
+        storage.get('identifier_human',function(response){
+            var human = response.identifier_human;  
+            if (human){
+            var call = {version:version,
+                        messages: rawMessages,
+                        userID:human,
+                        pluginActive: plugin_active
+                       };
+                resp(call);
+            }
+        });
     });
 }
 
@@ -142,11 +162,10 @@ function MessageResponse(body){
 function handleMessageCheck(data){
     const WIDTH = 440;
     const HEIGHT = 300;
+    rawMessages = data.result;
     if (data.result.length > 0){
         nextMessage = data.result[0];
-        function callback(tabs){
-             var currentTab = tabs[0];
-        }
+     
         ext.windows.create({url: ext.extension.getURL("popup.html"),
                             width: WIDTH,
                             height: HEIGHT,
@@ -189,13 +208,10 @@ function handleConfigCheck(data){
 
 
 function sendRecRequest(id){
-    console.log("requestRect");
     rectRequestAwaiting++;
-    ext.tabs.query({active: true, currentWindow: true}, function(tabs) {
-      ext.tabs.sendMessage(tabs[0].id, {greeting: "getRect", id: id}, function(response) {
-          console.log(response);
-          handleRecRequest(response.id,response.rect,response.body);
-        
+    ext.tabs.query({url:'https://www.facebook.com/'}, function(tabs) {
+      ext.tabs.sendMessage(tabs[0].id, {greeting: "getRect", id: id}, function(resp) {
+            handleRecRequest(resp.id,resp.rect,resp.body);
       });
     });
     
@@ -218,9 +234,9 @@ function handleRecRequest(id,Clientrect,bodyRect){
             storage.get('session_date',function(resp){
                 var session_date = new Date(resp.session_date);
                 if ((sessionID) && ( ((new Date) - session_date) < (60 * 60 * 1000))){ //eine Stunde Abstand
-                    sendFeedToServer(processedFeed,scrolledUntil,sessionID);
+                    sendFeedToServer(processedFeed,lastScrolledUntil,sessionID);
                 } else {
-                    sendFeedToServer(processedFeed,scrolledUntil,null);  
+                    sendFeedToServer(processedFeed,lastScrolledUntil,null);  
                 }
             });
         });
@@ -249,7 +265,7 @@ ext.runtime.onMessage.addListener(
             case "process-feed":
                 storage.get(configPlace,function(resp){
                 var config = resp.config;
-                    var scrolledUntil = request.scrolledUntil;
+                    lastScrolledUntil = request.scrolledUntil;
                     if (config){
                         var div = document.createElement("div");
                         div.innerHTML = request.data;
@@ -275,8 +291,11 @@ ext.runtime.onMessage.addListener(
                 handleOptionCall(sendResponse);
                 return true;
                 break;
+            case "getInformation":
+                handleInformationCall(sendResponse);
+                return true;
+                break;
             case "setDevConfigStatus":
-                console.log(request);
                 if (request.devConfig == true){
                     configPlace = "devconfig";
                 } else {

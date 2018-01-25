@@ -129,6 +129,7 @@ function buildJS(target) {
   const files = [
     'background.js',
     'contentscript.js',
+    'information.js',
     'registration.js',
     'options.js',
     'popup.js',

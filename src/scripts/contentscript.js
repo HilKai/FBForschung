@@ -5,7 +5,6 @@ var CryptoJS = require("crypto-js");
 
 
 
- ext.runtime.sendMessage({ action: 'opened-facebook', data: document.body.innerHTML, scrolledUntil:scrollIndex},function(result){}); // messages the background page to update various data, like messages and config
 
 ext.runtime.onMessage.addListener(
   function(request, sender, sendResponse) {
@@ -13,7 +12,7 @@ ext.runtime.onMessage.addListener(
         var response = {id: request.id,
                         rect:document.getElementById(request.id).getBoundingClientRect(),
                         body: document.body.getBoundingClientRect()}
-      sendResponse(response);
+        sendResponse(response);
     }
   });
 
@@ -63,8 +62,7 @@ var st = window.pageYOffset || window.scrollTop;
 
 var scrollIndex = 0;
 var nextScrollGoal = 50;
-ext.runtime.sendMessage({ action: 'process-feed', data: document.body.innerHTML, scrolledUntil:scrollIndex},function(result){
-     });  
+
 scrollHandler();
 //whenever a certain threshold is reached the FB-Feed will be sent to the background script to be analysed using the config
 function scrollHandler() {
@@ -76,6 +74,9 @@ function scrollHandler() {
      });  
     }
 }
+ ext.runtime.sendMessage({ action: 'opened-facebook', data: document.body.innerHTML, scrolledUntil:scrollIndex},function(result){}); // messages the background page to update various data, like messages and config
 
+ext.runtime.sendMessage({ action: 'process-feed', data: document.body.innerHTML, scrolledUntil:0},function(result){
+     });  
 
 
