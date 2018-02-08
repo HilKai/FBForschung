@@ -1,4 +1,8 @@
 form.login {
+	.stepwise {
+		display: none;
+	}
+	
     ul {
         margin-left: 25px;
         padding-left: 0;
@@ -6,10 +10,6 @@ form.login {
         
         li {
             margin: 0 0 40px 27px;
-            
-            &:last-of-type {
-                margin-top: 80px;
-            }
 
             &::before {
                 content: "\E39E";

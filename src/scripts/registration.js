@@ -9,23 +9,53 @@ import { sha3_512 } from 'js-sha3';
 var optionsLink = document.querySelector(".js-save");
 optionsLink.addEventListener("click", function(e) {
     e.preventDefault();
-    var hashedPass = sha3_512(document.getElementById('password').value);
-    var human = document.getElementById('mother').value +
-                           document.getElementById('father').value +
-                           document.getElementById('user').value +
-                           document.getElementById('birthday').value +
-                           document.getElementById('hair').value +
-                           document.getElementById('eye').value;
-  storage.set({identifier_password:hashedPass,identifier_human:human},function(){
-     ext.runtime.sendMessage({ action: 'register' },function(result){
-        if (result.worked == true){
-            close();
-        } else {
-            alert('Etwas ist schief gegangen.')
-        }
-     });    
-});
+	var password = document.getElementById('password').value,
+		password2 = document.getElementById('password2').value;
+	if(password == password2) {
+		var hashedPass = sha3_512(password);
+		var human = document.getElementById('mother').value +
+				   document.getElementById('father').value +
+				   document.getElementById('user').value +
+				   document.getElementById('birthday').value +
+				   document.getElementById('hair').value +
+				   document.getElementById('eye').value;
+		storage.set({identifier_password:hashedPass,identifier_human:human}, function() {
+				ext.runtime.sendMessage({ action: 'register' }, function(result) {
+						if(result.worked == true){
+							close();
+						} else {
+							alert('Etwas ist schief gegangen.')
+						}
+					});    
+			});
+	} else {
+		alert('Die beiden eingegebenen Passwörter stimmen nicht überein.');
+	}
 })
 
-
+//initially show step 1
+document.querySelector(".stepwise.step1").style.display = 'block';
+//handle next links
+document.querySelector("a.step1").addEventListener("click", function(e) {
+		e.preventDefault();
+		if(confirm('Nur zur Sicherheit: Sie sind jetzt bei Facebook eingeloggt?')) {
+			document.querySelector(".stepwise.step2").style.display = 'block';
+			document.querySelector(".stepwise.step1").style.display = 'none';
+		}
+	});
+document.querySelector("a.step2").addEventListener("click", function(e) {
+		e.preventDefault();
+		var human = document.getElementById('mother').value +
+				   document.getElementById('father').value +
+				   document.getElementById('user').value +
+				   document.getElementById('birthday').value +
+				   document.getElementById('hair').value +
+				   document.getElementById('eye').value;
+		if(human.length > 3) {
+			document.querySelector(".stepwise.step3").style.display = 'block';
+			document.querySelector(".stepwise.step2").style.display = 'none';
+		} else {
+			alert('Bitte füllen Sie mindestens vier Felder aus, um eine eindeutige Identifizierung sicherzustellen.');
+		}
+	});
 

@@ -1,327 +1,360 @@
-<!doctype html>
-<html>
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-
-    <!-- Bootstrap CSS -->
-    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-beta.3/css/bootstrap.min.css" integrity="sha384-Zug+QiDoJOrZ5t4lssLdxGhVrurbmBWopoEl+M6BdEfwnCJZtKxi1KgxUyJq13dy" crossorigin="anonymous">
-    <link href="https://fonts.googleapis.com/icon?family=Material+Icons"
-      rel="stylesheet">
-    <link rel="stylesheet" href="styles/registration.css">
-  <title>Registrieren</title>
-</head>
-<body class="wrap">
-    <div class="container mt-3">
-     <div class="row">
-        <div class="col-md-6 col-12">
-            <h2>FB-Forschung</h2>
-            <p>
-                Vielen Dank, dass Sie unsere Forschung unterstützen möchten. Die Privatsphäre Ihrer Daten ist uns dabei sehr wichtig, weshalb wir Ihre Daten anonymisiert speichern und Ihnen gleichzeitig die Möglichkeit geben, alle Ihre Daten einzusehen und auch zu löschen.
-            </p>
-            <p>
-                Um Ihre Daten einsehen zu können, müssen wir zunächst eine anonyme Kennung generieren. Damit Sie sich trotz Anonymität problemlos daran erinnern können, greifen wir auf eine wissenschaftlich erprobte Methode der anonymen Wiedererkennung von befragten Personen zurück.
-            </p>
-            <p>
-                Bitte wählen Sie für jede der sechs Fragen die passende Antwort aus. Wenn Sie eine der Fragen überhaupt nicht beantworten können, lassen Sie das Feld leer. Abschließend müssen Sie noch ein Passwort vergeben, dass Sie sich merken können.
-            </p>
-        </div>
-        <div class="col-md-6 col-12">
-            <form action="" method="post" class="login">
-                <ul class="list-unstyled">
-                    <li>
-                        <div class="popover">
-                            <h3 class="popover-header">Vorname der Mutter</h3>
-                            <div class="popover-body">
-                                <label for="mother">
-                                    Wählen Sie bitte den <strong>ersten Buchstaben</strong> des Vornamens Ihrer Mutter (oder einer Person, die für Sie einer Mutter am nächsten kommt) aus:
-                                </label>
-                                <select id="mother" name="mother" size="1" class="form-control" aria-describedby="motherhelp">
-                                    <option value=""></option>
-                                    <option value="a">a</option>
-                                    <option value="b">b</option>
-                                    <option value="c">c</option>
-                                    <option value="d">d</option>
-                                    <option value="e">e</option>
-                                    <option value="f">f</option>
-                                    <option value="g">g</option>
-                                    <option value="h">h</option>
-                                    <option value="i">i</option>
-                                    <option value="j">j</option>
-                                    <option value="k">k</option>
-                                    <option value="l">l</option>
-                                    <option value="m">m</option>
-                                    <option value="n">n</option>
-                                    <option value="o">o</option>
-                                    <option value="p">p</option>
-                                    <option value="q">q</option>
-                                    <option value="r">r</option>
-                                    <option value="s">s</option>
-                                    <option value="t">t</option>
-                                    <option value="u">u</option>
-                                    <option value="v">v</option>
-                                    <option value="w">w</option>
-                                    <option value="x">x</option>
-                                    <option value="y">y</option>
-                                    <option value="z">z</option>
-                                    <option value="ä">ä</option>
-                                    <option value="ö">ö</option>
-                                    <option value="ü">ü</option>
-                                    <option value="ß">ß</option>
-                                </select>
-                                <small id="motherhelp" class="form-text text-muted">z.B. <u>A</u>nna, <u>B</u>eate, <u>J</u>utta, <u>M</u>aria usw.</small>
-                            </div>
-                        </div>
-                    </li>
-                    <li>
-                        <div class="popover">
-                            <h3 class="popover-header">Vorname des Vaters</h3>
-                            <div class="popover-body">
-                                <label for="father">
-                                    Wählen Sie bitte den <strong>ersten Buchstaben</strong> des Vornamens Ihres Vaters (oder einer Person, die für Sie einem Vater am nächsten kommt) aus:
-                                </label>
-                                <select id="father" name="father" size="1" class="form-control" aria-describedby="fatherhelp">
-                                    <option value=""></option>
-                                    <option value="a">a</option>
-                                    <option value="b">b</option>
-                                    <option value="c">c</option>
-                                    <option value="d">d</option>
-                                    <option value="e">e</option>
-                                    <option value="f">f</option>
-                                    <option value="g">g</option>
-                                    <option value="h">h</option>
-                                    <option value="i">i</option>
-                                    <option value="j">j</option>
-                                    <option value="k">k</option>
-                                    <option value="l">l</option>
-                                    <option value="m">m</option>
-                                    <option value="n">n</option>
-                                    <option value="o">o</option>
-                                    <option value="p">p</option>
-                                    <option value="q">q</option>
-                                    <option value="r">r</option>
-                                    <option value="s">s</option>
-                                    <option value="t">t</option>
-                                    <option value="u">u</option>
-                                    <option value="v">v</option>
-                                    <option value="w">w</option>
-                                    <option value="x">x</option>
-                                    <option value="y">y</option>
-                                    <option value="z">z</option>
-                                    <option value="ä">ä</option>
-                                    <option value="ö">ö</option>
-                                    <option value="ü">ü</option>
-                                    <option value="ß">ß</option>
-                                </select>
-                                <small id="fatherhelp" class="form-text text-muted">z.B. <u>A</u>nton, <u>B</u>ernd, <u>H</u>ans-Peter usw.</small>
-                            </div>
-                        </div>
-                    </li>
-                    <li>
-                        <div class="popover">
-                            <h3 class="popover-header">Ihr Vorname</h3>
-                            <div class="popover-body">
-                                <label for="user">
-                                    Wählen Sie bitte den <strong>ersten Buchstaben</strong> Ihres Vornamens aus:
-                                </label>
-                                <select id="user" name="user" size="1" class="form-control" aria-describedby="userhelp">
-                                    <option value=""></option>
-                                    <option value="a">a</option>
-                                    <option value="b">b</option>
-                                    <option value="c">c</option>
-                                    <option value="d">d</option>
-                                    <option value="e">e</option>
-                                    <option value="f">f</option>
-                                    <option value="g">g</option>
-                                    <option value="h">h</option>
-                                    <option value="i">i</option>
-                                    <option value="j">j</option>
-                                    <option value="k">k</option>
-                                    <option value="l">l</option>
-                                    <option value="m">m</option>
-                                    <option value="n">n</option>
-                                    <option value="o">o</option>
-                                    <option value="p">p</option>
-                                    <option value="q">q</option>
-                                    <option value="r">r</option>
-                                    <option value="s">s</option>
-                                    <option value="t">t</option>
-                                    <option value="u">u</option>
-                                    <option value="v">v</option>
-                                    <option value="w">w</option>
-                                    <option value="x">x</option>
-                                    <option value="y">y</option>
-                                    <option value="z">z</option>
-                                    <option value="ä">ä</option>
-                                    <option value="ö">ö</option>
-                                    <option value="ü">ü</option>
-                                    <option value="ß">ß</option>
-                                </select>
-                                <small id="userhelp" class="form-text text-muted">z.B. <u>A</u>ngela, <u>K</u>ai, <u>M</u>ario usw.</small>
-                            </div>
-                        </div>
-                    </li>
-                    <li>
-                        <div class="popover">
-                            <h3 class="popover-header">Der Tag Ihres Geburtsdatums</h3>
-                            <div class="popover-body">
-                                <label for="birthday">
-                                    Wählen Sie bitte den Tag Ihres Geburtsdatums aus:
-                                </label>
-                                <select id="birthday" name="birthday" size="1" class="form-control" aria-describedby="birthdayhelp">
-                                    <option value=""></option>
-                                    <option value="1">1</option>
-                                    <option value="2">2</option>
-                                    <option value="3">3</option>
-                                    <option value="4">4</option>
-                                    <option value="5">5</option>
-                                    <option value="6">6</option>
-                                    <option value="7">7</option>
-                                    <option value="8">8</option>
-                                    <option value="9">9</option>
-                                    <option value="10">10</option>
-                                    <option value="11">11</option>
-                                    <option value="12">12</option>
-                                    <option value="13">13</option>
-                                    <option value="14">14</option>
-                                    <option value="15">15</option>
-                                    <option value="16">16</option>
-                                    <option value="17">17</option>
-                                    <option value="18">18</option>
-                                    <option value="19">19</option>
-                                    <option value="20">20</option>
-                                    <option value="21">21</option>
-                                    <option value="22">22</option>
-                                    <option value="23">23</option>
-                                    <option value="24">24</option>
-                                    <option value="25">25</option>
-                                    <option value="26">26</option>
-                                    <option value="27">27</option>
-                                    <option value="28">28</option>
-                                    <option value="29">29</option>
-                                    <option value="30">30</option>
-                                    <option value="31">31</option>
-                                </select>
-                                <small id="birthdayhelp" class="form-text text-muted">z.B. Geburtstag am 7. Januar = <u>7</u>, am 12. Mai = <u>12</u>, am 31. Oktober = <u>31</u> usw.</small>
-                            </div>
-                        </div>
-                    </li>
-                    <li>
-                        <div class="popover">
-                            <h3 class="popover-header">Ihre natürliche Haarfarbe</h3>
-                            <div class="popover-body">
-                                <label for="hair">
-                                    Wählen Sie bitte den <strong>letzten Buchstaben</strong> Ihrer natürlichen Haarfarbe aus:
-                                </label>
-                                <select id="hair" name="hair" size="1" class="form-control" aria-describedby="hairhelp">
-                                    <option value=""></option>
-                                    <option value="a">a</option>
-                                    <option value="b">b</option>
-                                    <option value="c">c</option>
-                                    <option value="d">d</option>
-                                    <option value="e">e</option>
-                                    <option value="f">f</option>
-                                    <option value="g">g</option>
-                                    <option value="h">h</option>
-                                    <option value="i">i</option>
-                                    <option value="j">j</option>
-                                    <option value="k">k</option>
-                                    <option value="l">l</option>
-                                    <option value="m">m</option>
-                                    <option value="n">n</option>
-                                    <option value="o">o</option>
-                                    <option value="p">p</option>
-                                    <option value="q">q</option>
-                                    <option value="r">r</option>
-                                    <option value="s">s</option>
-                                    <option value="t">t</option>
-                                    <option value="u">u</option>
-                                    <option value="v">v</option>
-                                    <option value="w">w</option>
-                                    <option value="x">x</option>
-                                    <option value="y">y</option>
-                                    <option value="z">z</option>
-                                    <option value="ä">ä</option>
-                                    <option value="ö">ö</option>
-                                    <option value="ü">ü</option>
-                                    <option value="ß">ß</option>
-                                </select>
-                                <small id="hairhelp" class="form-text text-muted">z.B. blon<u>d</u>, Glatz<u>e</u> usw.</small>
-                            </div>
-                        </div>
-                    </li>
-                    <li>
-                        <div class="popover">
-                            <h3 class="popover-header">Ihre Augenfarbe</h3>
-                            <div class="popover-body">
-                                <label for="eye">
-                                    Wählen Sie bitte den <strong>letzten Buchstaben</strong> Ihrer Augenfarbe aus:
-                                </label>
-                                <select id="eye" name="eye" size="1" class="form-control" aria-describedby="eyehelp">
-                                    <option value=""></option>
-                                    <option value="a">a</option>
-                                    <option value="b">b</option>
-                                    <option value="c">c</option>
-                                    <option value="d">d</option>
-                                    <option value="e">e</option>
-                                    <option value="f">f</option>
-                                    <option value="g">g</option>
-                                    <option value="h">h</option>
-                                    <option value="i">i</option>
-                                    <option value="j">j</option>
-                                    <option value="k">k</option>
-                                    <option value="l">l</option>
-                                    <option value="m">m</option>
-                                    <option value="n">n</option>
-                                    <option value="o">o</option>
-                                    <option value="p">p</option>
-                                    <option value="q">q</option>
-                                    <option value="r">r</option>
-                                    <option value="s">s</option>
-                                    <option value="t">t</option>
-                                    <option value="u">u</option>
-                                    <option value="v">v</option>
-                                    <option value="w">w</option>
-                                    <option value="x">x</option>
-                                    <option value="y">y</option>
-                                    <option value="z">z</option>
-                                    <option value="ä">ä</option>
-                                    <option value="ö">ö</option>
-                                    <option value="ü">ü</option>
-                                    <option value="ß">ß</option>
-                                </select>
-                                <small id="eyehelp" class="form-text text-muted">z.B. bla<u>u</u>, grü<u>n</u>, gra<u>u</u> usw.</small>
-                            </div>
-                        </div>
-                    </li>
-                    <li>
-                        <div class="popover">
-                            <h3 class="popover-header">Passwort</h3>
-                            <div class="popover-body">
-                                <label for="password">
-                                    Geben Sie ein Passwort ein, das Sie sich gut merken können:
-                                </label>
-                                <input type="password" class="form-control" id="password" name="password" />
-                                <input type="submit" value="registrieren" class="btn btn-primary mt-3 js-save" />
-                            </div>
-                        </div>
-                    </li>
-                </ul>
-            </form>
-        </div>
-    </div>
-    </div>
-  
-  <footer class="main-footer">
-    <div class="grid">
-      <div class="unit whole center-on-mobiles">
-        <p class="text-center text-muted">
-          &copy; Facebook Datenspende
-        </p>
-      </div>
-    </div>
-  
-  </footer>
-  <script src="scripts/registration.js"></script>
-</body>
+<!DOCTYPE html>
+<html lang="de">
+	<head>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width,initial-scale=1">
+		<link rel="shortcut icon" href="icons/favicon.ico" type="image/x-icon">
+		<link rel="icon" href="icons/favicon.ico" type="image/x-icon">
+		<!-- Bootstrap CSS -->
+		<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-beta.3/css/bootstrap.min.css" integrity="sha384-Zug+QiDoJOrZ5t4lssLdxGhVrurbmBWopoEl+M6BdEfwnCJZtKxi1KgxUyJq13dy" crossorigin="anonymous">
+		<link href="https://fonts.googleapis.com/icon?family=Material+Icons"
+			rel="stylesheet">
+		<link rel="stylesheet" href="styles/registration.css">
+		<title>FB-Forschung: Registrierung</title>
+	</head>
+	<body class="wrap">
+		<div class="container mt-3">
+			<div class="jumbotron">
+				<h1>
+					<img src="icons/icon-48.png" alt="FB-Forschung" />
+					FB-Forschung
+				</h1>
+				<p class="lead">
+					Vielen Dank, dass Sie unsere Forschung unterstützen. Die Privatsphäre Ihrer Daten ist uns dabei sehr wichtig. Um diese Privatsphäre zu gewährleisten, sind für die Registrierung nur drei kurze Schritte nötig.
+				</p>
+			</div>
+			<form action="" method="post" class="login">
+				<div class="stepwise step1 mb-3">
+					<h3>Schritt 1: Bei Facebook einloggen</h3>
+					<p>
+						Stellen Sie sicher, dass Sie bei Facebook an diesem Computer eingeloggt sind. Sie können dafür <a href="https://facebook.com" target="_blank">ein neues Browser-Fenster öffnen</a>. Wenn Sie (und niemand sonst) eingeloggt sind, dann können Sie diesen Schritt abschließen. Später können Sie sich selbstverständlich wieder ausloggen.
+					</p>
+					<div class="text-right">
+						<a class="btn btn-secondary step1" href="#" role="button">Erledigt, weiter zu Schritt 2 &raquo;</a>
+					</div>
+				</div>
+				<div class="stepwise step2 mb-3">
+					<h3>Schritt 2: Eine anonyme Kennung einrichten</h3>
+					<div class="row">
+						<div class="col-md-6 col-12">
+							<p>
+								Um Ihre Daten anonym zuordnen zu können, müssen wir nun noch eine anonyme Kennung generieren. Damit Sie sich trotz Anonymität problemlos daran erinnern (etwa, um später Ihre Daten einzusehen) können, greifen wir auf eine wissenschaftlich erprobte Methode der anonymen Wiedererkennung von befragten Personen zurück.
+							</p>
+							<p>
+								Bitte wählen Sie für jede der sechs Fragen die passende Antwort aus. Wenn Sie eine der Fragen überhaupt nicht beantworten können, lassen Sie das Feld leer.
+							</p>
+						</div>
+						<div class="col-md-6 col-12">
+							<ul class="list-unstyled">
+								<li>
+									<div class="popover">
+										<h3 class="popover-header">Vorname der Mutter</h3>
+										<div class="popover-body">
+											<label for="mother">
+											Wählen Sie bitte den <strong>ersten Buchstaben</strong> des Vornamens Ihrer Mutter (oder einer Person, die für Sie einer Mutter am nächsten kommt) aus:
+											</label>
+											<select id="mother" name="mother" size="1" class="form-control" aria-describedby="motherhelp">
+												<option value=""></option>
+												<option value="a">a</option>
+												<option value="b">b</option>
+												<option value="c">c</option>
+												<option value="d">d</option>
+												<option value="e">e</option>
+												<option value="f">f</option>
+												<option value="g">g</option>
+												<option value="h">h</option>
+												<option value="i">i</option>
+												<option value="j">j</option>
+												<option value="k">k</option>
+												<option value="l">l</option>
+												<option value="m">m</option>
+												<option value="n">n</option>
+												<option value="o">o</option>
+												<option value="p">p</option>
+												<option value="q">q</option>
+												<option value="r">r</option>
+												<option value="s">s</option>
+												<option value="t">t</option>
+												<option value="u">u</option>
+												<option value="v">v</option>
+												<option value="w">w</option>
+												<option value="x">x</option>
+												<option value="y">y</option>
+												<option value="z">z</option>
+												<option value="ä">ä</option>
+												<option value="ö">ö</option>
+												<option value="ü">ü</option>
+												<option value="ß">ß</option>
+											</select>
+											<small id="motherhelp" class="form-text text-muted">z.B. <u>A</u>nna, <u>B</u>eate, <u>J</u>utta, <u>M</u>aria usw.</small>
+										</div>
+									</div>
+								</li>
+								<li>
+									<div class="popover">
+										<h3 class="popover-header">Vorname des Vaters</h3>
+										<div class="popover-body">
+											<label for="father">
+											Wählen Sie bitte den <strong>ersten Buchstaben</strong> des Vornamens Ihres Vaters (oder einer Person, die für Sie einem Vater am nächsten kommt) aus:
+											</label>
+											<select id="father" name="father" size="1" class="form-control" aria-describedby="fatherhelp">
+												<option value=""></option>
+												<option value="a">a</option>
+												<option value="b">b</option>
+												<option value="c">c</option>
+												<option value="d">d</option>
+												<option value="e">e</option>
+												<option value="f">f</option>
+												<option value="g">g</option>
+												<option value="h">h</option>
+												<option value="i">i</option>
+												<option value="j">j</option>
+												<option value="k">k</option>
+												<option value="l">l</option>
+												<option value="m">m</option>
+												<option value="n">n</option>
+												<option value="o">o</option>
+												<option value="p">p</option>
+												<option value="q">q</option>
+												<option value="r">r</option>
+												<option value="s">s</option>
+												<option value="t">t</option>
+												<option value="u">u</option>
+												<option value="v">v</option>
+												<option value="w">w</option>
+												<option value="x">x</option>
+												<option value="y">y</option>
+												<option value="z">z</option>
+												<option value="ä">ä</option>
+												<option value="ö">ö</option>
+												<option value="ü">ü</option>
+												<option value="ß">ß</option>
+											</select>
+											<small id="fatherhelp" class="form-text text-muted">z.B. <u>A</u>nton, <u>B</u>ernd, <u>H</u>ans-Peter usw.</small>
+										</div>
+									</div>
+								</li>
+								<li>
+									<div class="popover">
+										<h3 class="popover-header">Ihr Vorname</h3>
+										<div class="popover-body">
+											<label for="user">
+											Wählen Sie bitte den <strong>ersten Buchstaben</strong> Ihres Vornamens aus:
+											</label>
+											<select id="user" name="user" size="1" class="form-control" aria-describedby="userhelp">
+												<option value=""></option>
+												<option value="a">a</option>
+												<option value="b">b</option>
+												<option value="c">c</option>
+												<option value="d">d</option>
+												<option value="e">e</option>
+												<option value="f">f</option>
+												<option value="g">g</option>
+												<option value="h">h</option>
+												<option value="i">i</option>
+												<option value="j">j</option>
+												<option value="k">k</option>
+												<option value="l">l</option>
+												<option value="m">m</option>
+												<option value="n">n</option>
+												<option value="o">o</option>
+												<option value="p">p</option>
+												<option value="q">q</option>
+												<option value="r">r</option>
+												<option value="s">s</option>
+												<option value="t">t</option>
+												<option value="u">u</option>
+												<option value="v">v</option>
+												<option value="w">w</option>
+												<option value="x">x</option>
+												<option value="y">y</option>
+												<option value="z">z</option>
+												<option value="ä">ä</option>
+												<option value="ö">ö</option>
+												<option value="ü">ü</option>
+												<option value="ß">ß</option>
+											</select>
+											<small id="userhelp" class="form-text text-muted">z.B. <u>A</u>ngela, <u>K</u>ai, <u>M</u>ario usw.</small>
+										</div>
+									</div>
+								</li>
+								<li>
+									<div class="popover">
+										<h3 class="popover-header">Der Tag Ihres Geburtsdatums</h3>
+										<div class="popover-body">
+											<label for="birthday">
+											Wählen Sie bitte den Tag Ihres Geburtsdatums aus:
+											</label>
+											<select id="birthday" name="birthday" size="1" class="form-control" aria-describedby="birthdayhelp">
+												<option value=""></option>
+												<option value="1">1</option>
+												<option value="2">2</option>
+												<option value="3">3</option>
+												<option value="4">4</option>
+												<option value="5">5</option>
+												<option value="6">6</option>
+												<option value="7">7</option>
+												<option value="8">8</option>
+												<option value="9">9</option>
+												<option value="10">10</option>
+												<option value="11">11</option>
+												<option value="12">12</option>
+												<option value="13">13</option>
+												<option value="14">14</option>
+												<option value="15">15</option>
+												<option value="16">16</option>
+												<option value="17">17</option>
+												<option value="18">18</option>
+												<option value="19">19</option>
+												<option value="20">20</option>
+												<option value="21">21</option>
+												<option value="22">22</option>
+												<option value="23">23</option>
+												<option value="24">24</option>
+												<option value="25">25</option>
+												<option value="26">26</option>
+												<option value="27">27</option>
+												<option value="28">28</option>
+												<option value="29">29</option>
+												<option value="30">30</option>
+												<option value="31">31</option>
+											</select>
+											<small id="birthdayhelp" class="form-text text-muted">z.B. Geburtstag am 7. Januar = <u>7</u>, am 12. Mai = <u>12</u>, am 31. Oktober = <u>31</u> usw.</small>
+										</div>
+									</div>
+								</li>
+								<li>
+									<div class="popover">
+										<h3 class="popover-header">Ihre natürliche Haarfarbe</h3>
+										<div class="popover-body">
+											<label for="hair">
+											Wählen Sie bitte den <strong>letzten Buchstaben</strong> Ihrer natürlichen Haarfarbe aus:
+											</label>
+											<select id="hair" name="hair" size="1" class="form-control" aria-describedby="hairhelp">
+												<option value=""></option>
+												<option value="a">a</option>
+												<option value="b">b</option>
+												<option value="c">c</option>
+												<option value="d">d</option>
+												<option value="e">e</option>
+												<option value="f">f</option>
+												<option value="g">g</option>
+												<option value="h">h</option>
+												<option value="i">i</option>
+												<option value="j">j</option>
+												<option value="k">k</option>
+												<option value="l">l</option>
+												<option value="m">m</option>
+												<option value="n">n</option>
+												<option value="o">o</option>
+												<option value="p">p</option>
+												<option value="q">q</option>
+												<option value="r">r</option>
+												<option value="s">s</option>
+												<option value="t">t</option>
+												<option value="u">u</option>
+												<option value="v">v</option>
+												<option value="w">w</option>
+												<option value="x">x</option>
+												<option value="y">y</option>
+												<option value="z">z</option>
+												<option value="ä">ä</option>
+												<option value="ö">ö</option>
+												<option value="ü">ü</option>
+												<option value="ß">ß</option>
+											</select>
+											<small id="hairhelp" class="form-text text-muted">z.B. blon<u>d</u>, Glatz<u>e</u> usw.</small>
+										</div>
+									</div>
+								</li>
+								<li>
+									<div class="popover">
+										<h3 class="popover-header">Ihre Augenfarbe</h3>
+										<div class="popover-body">
+											<label for="eye">
+											Wählen Sie bitte den <strong>letzten Buchstaben</strong> Ihrer Augenfarbe aus:
+											</label>
+											<select id="eye" name="eye" size="1" class="form-control" aria-describedby="eyehelp">
+												<option value=""></option>
+												<option value="a">a</option>
+												<option value="b">b</option>
+												<option value="c">c</option>
+												<option value="d">d</option>
+												<option value="e">e</option>
+												<option value="f">f</option>
+												<option value="g">g</option>
+												<option value="h">h</option>
+												<option value="i">i</option>
+												<option value="j">j</option>
+												<option value="k">k</option>
+												<option value="l">l</option>
+												<option value="m">m</option>
+												<option value="n">n</option>
+												<option value="o">o</option>
+												<option value="p">p</option>
+												<option value="q">q</option>
+												<option value="r">r</option>
+												<option value="s">s</option>
+												<option value="t">t</option>
+												<option value="u">u</option>
+												<option value="v">v</option>
+												<option value="w">w</option>
+												<option value="x">x</option>
+												<option value="y">y</option>
+												<option value="z">z</option>
+												<option value="ä">ä</option>
+												<option value="ö">ö</option>
+												<option value="ü">ü</option>
+												<option value="ß">ß</option>
+											</select>
+											<small id="eyehelp" class="form-text text-muted">z.B. bla<u>u</u>, grü<u>n</u>, gra<u>u</u> usw.</small>
+											<a class="btn btn-secondary mt-2 mb-1 step2" href="#" role="button">Okay, weiter zu Schritt 3 &raquo;</a>
+										</div>
+									</div>
+								</li>
+							</ul>
+						</div>
+					</div>
+				</div>
+				<div class="stepwise step3 mb-3">
+					<h3>Schritt 3: Ein Passwort vergeben</h3>
+					<div class="row">
+						<div class="col-md-6 col-12">
+							<p>
+								Zur abschließenden Sicherheit benötigen Sie abschließend noch ein Passwort. Achten Sie darauf, dass Sie das Passwort sonst nirgendwo in Verwendung haben (schon gar nicht bei Facebook).
+							</p>
+						</div>
+						<div class="col-md-6 col-12">
+							<ul class="list-unstyled">
+								<li>
+									<div class="popover">
+										<h3 class="popover-header">Passwort</h3>
+										<div class="popover-body">
+											<label for="password">
+												Geben Sie ein Passwort ein, das Sie sich gut merken können:
+											</label>
+											<input type="password" class="form-control" id="password" name="password" />
+										</div>
+									</div>
+								</li>
+								<li>
+									<div class="popover">
+										<h3 class="popover-header">Und nochmals ...</h3>
+										<div class="popover-body">
+											<label for="password">
+												Um sicherzustellen, dass Sie sich nicht vertippt haben, geben Sie das Passwort bitte nochmals ein:
+											</label>
+											<input type="password" class="form-control" id="password2" name="password2" />
+											<input type="submit" value="Registrierung abschließen" class="btn btn-primary mt-2 mb-1 js-save" />
+										</div>
+									</div>
+								</li>
+							</ul>
+						</div>
+					</div>
+				</div>
+			</form>
+		</div>
+		<script src="scripts/registration.js"></script>
+	</body>
 </html>
