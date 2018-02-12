@@ -28,20 +28,6 @@ storage.get('plugin_uid',function(resp){
 
 
 
-
-
-/*watches for the first install */
-function install_notice() {
-    if (localStorage.getItem('install_time'))
-        return;
-
-    var now = new Date().getTime();
-    localStorage.setItem('install_time', now);
-    ext.tabs.create({'url': ext.extension.getURL('registration.html')});  
-}
-install_notice();
-
-
 /*requests all new Messages to be shown */
 function checkIfMessageUpdate(){
     getRequest('https://fbforschung.de/message',null,handleMessageCheck);    
