@@ -242,7 +242,6 @@ ext.runtime.onMessage.addListener(
                     var config = resp.config;
                     parseConfig(config);
                     sendResponse(configTrees);   
-                });
                 break;
             case "register":
                 restRegister(sendResponse);
