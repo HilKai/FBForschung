@@ -24,7 +24,7 @@ optionsLink.addEventListener("click", function(e) {
 						if(result.worked == true){
 							close();
 						} else {
-							alert('Etwas ist schief gegangen.')
+							alert('Das hat leider nicht geklappt. Wahrscheinlich ist bereits jemand mit diesen Eingaben registriert. Bitte versuchen Sie es später erneut oder wenden Sie sich an unseren Support unter www.fbforschung.de');
 						}
 					});    
 			});
