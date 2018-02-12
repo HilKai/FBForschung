@@ -49,8 +49,8 @@ function getDevConfig(){
 
 function handleOptionCall(resp){
     storage.get(configPlace,function(response){
-
-        var version = response.config.version;
+        console.log(response);
+        var version = response[configPlace].version;
 
         var isDev = isUsingDevConfig();
         var call = {version:version,
