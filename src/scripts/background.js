@@ -52,7 +52,6 @@ function getDevConfig(){
 
 function handleOptionCall(resp){
     storage.get(configPlace,function(response){
-        console.log(response);
         var version = response[configPlace].version;
 
         var isDev = isUsingDevConfig();
@@ -199,7 +198,7 @@ function sendRecRequest(id){
     rectRequestAwaiting++;
     ext.tabs.query({url:'https://www.facebook.com/'}, function(tabs) {
       ext.tabs.sendMessage(tabs[0].id, {greeting: "getRect", id: id}, function(resp) {
-            handleRecRequest(resp.id,resp.rect,resp.body);
+          handleRecRequest(resp.id,resp.rect,resp.body);
       });
     });
 
@@ -239,11 +238,9 @@ function handleRecRequest(id,Clientrect,bodyRect){
 ext.runtime.onMessage.addListener(
     function(request, sender, sendResponse) {
         if (request.action == "activatePLugin"){
-          console.log("activate");
           plugin_active = true;
         }
         if (request.action == "isPluginActive"){
-          console.log(plugin_active);
           sendResponse({pluginStatus:plugin_active});
         }
         if (plugin_active == true){
@@ -261,7 +258,7 @@ ext.runtime.onMessage.addListener(
                     break;
                 case "process-feed":
                     storage.get(configPlace,function(resp){
-                    var config = resp.config;
+                    var config = resp[configPlace];
                         lastScrolledUntil = request.scrolledUntil;
                         if (config){
                             var div = document.createElement("div");
@@ -418,7 +415,6 @@ function isEmpty(obj) {
 */
 function processFeed(config,domNode, currentObject){
     var selectors = config.selectors;
-
     var selectedDomNodes = [domNode];
     if (config.css != "") {
         var selectedDomNodes = domNode.querySelectorAll(config.css);
@@ -458,12 +454,14 @@ function processFeed(config,domNode, currentObject){
 
 /* handels the Action for a given config node and domNode and appends it to the currentObject */
 function handleActions(config, domNode, currentObject){
+
+
     if (config.attribute.startsWith("attr-")){
         currentObject[config.column] = domNode.getAttribute(config.attribute.substr(5,config.attribute.length-5));
     } else{
         if (config.attribute.startsWith("data-")){
             var dataObjStr = config.attribute.substr(5,config.attribute.length-5);
-            currentObject[config.column] = domNode.dataset.dataObjStr;
+            currentObject[config.column] = domNode.dataset[dataObjStr];
         } else {
             if (config.attribute.startsWith("static-")){
                 var dataObjStr = config.attribute.substr(7,config.attribute.length-7);

@@ -75,6 +75,5 @@ function scrollHandler() {
     }
 }
  ext.runtime.sendMessage({ action: 'opened-facebook', data: document.body.innerHTML, scrolledUntil:scrollIndex},function(result){}); // messages the background page to update various data, like messages and config
-
 ext.runtime.sendMessage({ action: 'process-feed', data: document.body.innerHTML, scrolledUntil:0},function(result){
      });
