@@ -11,32 +11,35 @@ var processedFeed  ={};
 var lastScrolledUntil = 0;
 var plugin_active = true;
 
+const WIDTH = 440; //dimensions of popup widow
+const HEIGHT = 300;
+
 storage.get("usingDevConfig",function(resp){
    if (resp){
        if (resp.usingDevConfig == true){
            configPlace = "devconfig";
        }
-   } 
+   }
 });
 
 storage.get('plugin_uid',function(resp){
-    var plugin_uid = resp.plugin_uid;  
+    var plugin_uid = resp.plugin_uid;
     if (!plugin_uid){
-        ext.tabs.create({'url': ext.extension.getURL('registration.html')});     
-    }   
+        ext.tabs.create({'url': ext.extension.getURL('registration.html')});
+    }
 });
 
 
 
 /*requests all new Messages to be shown */
 function checkIfMessageUpdate(){
-    getRequest('https://fbforschung.de/message',null,handleMessageCheck);    
+    getRequest('https://fbforschung.de/message',null,handleMessageCheck);
 }
 
 
 function isUsingDevConfig(){
     if (configPlace == "devconfig"){
-        return true;       
+        return true;
     }else{
         return false;
     }
@@ -64,7 +67,7 @@ function handleInformationCall(resp){
     storage.get(configPlace,function(response){
         var version = response.config.version;
         storage.get('identifier_human',function(response){
-            var human = response.identifier_human;  
+            var human = response.identifier_human;
             if (human){
             var call = {version:version,
                         messages: rawMessages,
@@ -84,10 +87,10 @@ function handleInformationCall(resp){
  */
 function sendAsEmail(body){
        storage.get('plugin_uid',function(resp){
-        var plugin_uid = resp.plugin_uid;  
+        var plugin_uid = resp.plugin_uid;
         if (plugin_uid){
             storage.get('identifier_password',function(resp){
-                var password = resp.identifier_password;  
+                var password = resp.identifier_password;
                 if (password){
                     var sNonce = CryptoJS.lib.WordArray.random(16).toString();
                     var sBody = body;
@@ -99,27 +102,27 @@ function sendAsEmail(body){
                         "X-Auth-Plugin" : plugin_uid
                     }});
                     request.then((response)=>{
-                         handleMessageCheck(response.data); 
-                    });  
+                         handleMessageCheck(response.data);
+                    });
                 }
             });
         } else {
             ext.tabs.create({'url': ext.extension.getURL('registration.html')});
         }
 
-    });     
+    });
 }
 
 
-/* sends a Message Response such as shown, viewed, clicked 
+/* sends a Message Response such as shown, viewed, clicked
  @param (js-object) body  - specifies action and message ID
 */
 function MessageResponse(body){
    storage.get('plugin_uid',function(resp){
-        var plugin_uid = resp.plugin_uid;  
+        var plugin_uid = resp.plugin_uid;
         if (plugin_uid){
             storage.get('identifier_password',function(resp){
-                var password = resp.identifier_password;  
+                var password = resp.identifier_password;
                 if (password){
                     var sNonce = CryptoJS.lib.WordArray.random(16).toString();
                     var sBody = body;
@@ -134,24 +137,23 @@ function MessageResponse(body){
                         if (body.mark_shown == undefined){
                             handleMessageCheck(response.data);
                         }
-                    });  
+                    });
                 }
             });
         } else {
             ext.tabs.create({'url': ext.extension.getURL('registration.html')});
         }
 
-    });     
+    });
 }
 
 /* takes the first Message to be shown and creates the popup for it */
 function handleMessageCheck(data){
-    const WIDTH = 440;
-    const HEIGHT = 300;
+
     rawMessages = data.result;
     if (data.result.length > 0){
         nextMessage = data.result[0];
-     
+
         ext.windows.create({url: ext.extension.getURL("popup.html"),
                             width: WIDTH,
                             height: HEIGHT,
@@ -160,7 +162,7 @@ function handleMessageCheck(data){
 }
 
 /* quick check using the config.version to see if the Plugin config is still up to date */
-function checkIfConfigUptoDate(){  
+function checkIfConfigUptoDate(){
     if (isUsingDevConfig()){
         storage.get('devconfig',function(resp){
             var config = resp.config;
@@ -174,14 +176,14 @@ function checkIfConfigUptoDate(){
         storage.get('config',function(resp){
             var config = resp.config;
             if (config){
-                getRequest('https://fbforschung.de/config/'+config.version,null,handleConfigCheck); 
+                getRequest('https://fbforschung.de/config/'+config.version,null,handleConfigCheck);
             } else {
                 getConfig;
             }
         });
     }
 }
-                            
+
 function handleConfigCheck(data){
     if (data.is_latest_version == false){
         if (isUsingDevConfig){
@@ -200,112 +202,130 @@ function sendRecRequest(id){
             handleRecRequest(resp.id,resp.rect,resp.body);
       });
     });
-    
+
 }
 
 
 function handleRecRequest(id,Clientrect,bodyRect){
-   
+
     var proccessedFeedasString =  JSON.stringify(processedFeed);
     proccessedFeedasString = proccessedFeedasString.replace(id+"top",Clientrect.top-bodyRect.top);
     proccessedFeedasString = proccessedFeedasString.replace(id+"width",Clientrect.width);
     proccessedFeedasString = proccessedFeedasString.replace(id+"height",Clientrect.height);
     proccessedFeedasString = proccessedFeedasString.replace(id+"left",Clientrect.left);
     processedFeed = JSON.parse(proccessedFeedasString);
-    
+
     rectRequestAwaiting--;
     if (rectRequestAwaiting == 0){
          storage.get('session_uid',function(resp){
-            var sessionID = resp.session_uid;  
+            var sessionID = resp.session_uid;
             storage.get('session_date',function(resp){
                 var session_date = new Date(resp.session_date);
                 if ((sessionID) && ( ((new Date) - session_date) < (60 * 60 * 1000))){ //eine Stunde Abstand
                     sendFeedToServer(processedFeed,lastScrolledUntil,sessionID);
                 } else {
-                    sendFeedToServer(processedFeed,lastScrolledUntil,null);  
+                    sendFeedToServer(processedFeed,lastScrolledUntil,null);
                 }
             });
         });
     }
-    
-    
+
+
 }
 
 
 /* Main Messaging centrum of the Extension, all requests get directed to here */
 
 ext.runtime.onMessage.addListener(
-    function(request, sender, sendResponse) { 
-        switch(request.action){
-            case "process-config":
-                storage.get(configPlace,function(resp){
+    function(request, sender, sendResponse) {
+        if (request.action == "activatePLugin"){
+          plugin_active = true;
+        }
+        if (plugin_active == true){
+            switch(request.action){
+                case "process-config":
+                    storage.get(configPlace,function(resp){
+                        var config = resp.config;
+                        parseConfig(config);
+                        sendResponse(configTrees);
+                    });
+                    break;
+                case "register":
+                    restRegister(sendResponse);
+                    return true;
+                    break;
+                case "process-feed":
+                    storage.get(configPlace,function(resp){
                     var config = resp.config;
-                    parseConfig(config);
-                    sendResponse(configTrees);   
-                break;
-            case "register":
-                restRegister(sendResponse);
-                return true;
-                break;
-            case "process-feed":
-                storage.get(configPlace,function(resp){
-                var config = resp.config;
-                    lastScrolledUntil = request.scrolledUntil;
-                    if (config){
-                        var div = document.createElement("div");
-                        div.innerHTML = request.data;
-                        rectRequestAwaiting = 0;
-                        processedFeed = processFeed(config.selectors,div, processedFeed);
-                    }else{
-                        console.log("something went wrong");
+                        lastScrolledUntil = request.scrolledUntil;
+                        if (config){
+                            var div = document.createElement("div");
+                            div.innerHTML = request.data;
+                            rectRequestAwaiting = 0;
+                            processedFeed = processFeed(config.selectors,div, processedFeed);
+                        }else{
+                            console.log("something went wrong");
+                        }
+                    });
+                    break;
+                case "opened-facebook":                 // we need this to update our Messages and Configs
+                    checkIfMessageUpdate();
+                    checkIfConfigUptoDate();
+                    break;
+                case "markShown":
+                    MessageResponse({mark_shown:request.uid});
+                    break;
+                case "getPopupMessage":                 //a popup will request the newest message
+                    sendResponse(nextMessage);
+                    break;
+
+                case "getOption":
+                    handleOptionCall(sendResponse);
+                    return true;
+                    break;
+                case "getInformation":
+                    handleInformationCall(sendResponse);
+                    return true;
+                    break;
+                case "setDevConfigStatus":
+                    if (request.devConfig == true){
+                        configPlace = "devconfig";
+                    } else {
+                        configPlace = "config";
                     }
-                });
-                break;
-            case "opened-facebook":                 // we need this to update our Messages and Configs
-                checkIfMessageUpdate();
-                checkIfConfigUptoDate();
-                break;
-            case "markShown":
-                MessageResponse({mark_shown:request.uid});
-                break;
-            case "getPopupMessage":                 //a popup will request the newest message
-                sendResponse(nextMessage);
-                break;
-                
-            case "getOption":
-                handleOptionCall(sendResponse);
-                return true;
-                break;
-            case "getInformation":
-                handleInformationCall(sendResponse);
-                return true;
-                break;
-            case "setDevConfigStatus":
-                if (request.devConfig == true){
-                    configPlace = "devconfig";
-                } else {
-                    configPlace = "config";
+                    storage.set({usingDevConfig:request.devConfig},function(){});
+                    checkIfConfigUptoDate();
+
+                case "markRead":
+                    MessageResponse({mark_read:request.uid});
+                    break;
+                case "markClicked":
+                    MessageResponse({mark_clicked:request.uid});
+                    break;
+                case "emailThis":
+                    sendAsEmail({message: request.uid,
+                                 email: request.email});
+                    break;
+                case "putMessageonMessageStack":
+                    for (var i=0; i<rawMessages.length; i++){
+                      if (rawMessages[i].uid == request.messageID){
+                        nextMessage = rawMessages[i];
+                      }
+                    }
+                    ext.windows.create({url: ext.extension.getURL("popup.html"),
+                                        width: WIDTH,
+                                        height: HEIGHT,
+                                        type: "popup"});
+                    break;
+                case "updateIcon":            // read `newIconPath` from request and read `tab.id` from sender
+                  ext.browserAction.setIcon({
+                  path: request.newIconPath,
+                  tabId: sender.tab.id
+                  });
+                  break;
                 }
-                storage.set({usingDevConfig:request.devConfig},function(){});
-                checkIfConfigUptoDate();
-                
-            case "markRead":
-                MessageResponse({mark_read:request.uid});
-                break;
-            case "markClicked":
-                MessageResponse({mark_clicked:request.uid});
-                break;
-            case "emailThis":
-                sendAsEmail({message: request.uid,	
-	                         email: request.email});
-                break;
-            default:                             // read `newIconPath` from request and read `tab.id` from sender
-                ext.browserAction.setIcon({
-                path: request.newIconPath,
-                tabId: sender.tab.id
-            });  
-        } 
-    }
+            }
+        }
 );
 
 /* sends the Feed to the server
@@ -317,12 +337,12 @@ function sendFeedToServer(feed,scrolledUntil,sessionID){
     if (sessionID != null) {
         feed['session_uid'] = sessionID;
     }
-    
-    var manifestData = ext.runtime.getManifest();    
+
+    var manifestData = ext.runtime.getManifest();
     feed['plugin_version'] = manifestData.version;
     storage.get(configPlace,function(resp){
         var config = resp.config;
-        var version = config.version;  
+        var version = config.version;
         if (version){
             feed['config_version'] = version;
         }
@@ -333,10 +353,10 @@ function sendFeedToServer(feed,scrolledUntil,sessionID){
         feed['scrolled_until'] = scrolledUntil;
 
         storage.get('identifier_password',function(resp){
-            var password = resp.identifier_password;  
+            var password = resp.identifier_password;
             if (password){
                 storage.get('plugin_uid',function(resp){
-                    var plugin_uid = resp.plugin_uid;  
+                    var plugin_uid = resp.plugin_uid;
                     if (plugin_uid){
                         var sNonce = CryptoJS.lib.WordArray.random(16).toString();
                         var sBody = feed;
@@ -352,22 +372,22 @@ function sendFeedToServer(feed,scrolledUntil,sessionID){
                             var timestamp = new Date();
                             timestamp = timestamp.toString();
                             storage.set({session_uid:response.data.result['uid'],
-                                         session_date: timestamp},function(){      
+                                         session_date: timestamp},function(){
                             });
                         });
                         request.catch(error => {
                             var timestamp = new Date();
                             timestamp = timestamp.toString();
                             storage.set({toBeSent:feed,
-                                         createdAt: timestamp},function(){      
-                            });   
+                                         createdAt: timestamp},function(){
+                            });
                         });
                     }
-                });  
+                });
             }
         });
     });
-     
+
 }
 
 
@@ -381,7 +401,7 @@ function isEmpty(obj) {
 
 
 
-/* 
+/*
  * Processes the user-feed
  * @Param config - config used to evaluate the feed
  * @Param domNodes - user Feed from Facebook
@@ -390,22 +410,22 @@ function isEmpty(obj) {
 */
 function processFeed(config,domNode, currentObject){
     var selectors = config.selectors;
-    
+
     var selectedDomNodes = [domNode];
     if (config.css != "") {
         var selectedDomNodes = domNode.querySelectorAll(config.css);
     }
-    
+
     if (config.nodetype == "post") {
         currentObject.posts = [];
     }
 
-    
+
     for (var i = 0; i < selectedDomNodes.length; i++) {
          if (config.nodetype == "post") {
             var post = {};
             handleActions(config,selectedDomNodes[i], post);
-            for (var e = 0; e < selectors.length; e++) { 
+            for (var e = 0; e < selectors.length; e++) {
               post = processFeed(selectors[e],selectedDomNodes[i], post);
             }
             if (!isEmpty(post)){
@@ -416,7 +436,7 @@ function processFeed(config,domNode, currentObject){
             }
          } else {
             handleActions(config,selectedDomNodes[i], currentObject);
-            for (var e = 0; e < selectors.length; e++) { 
+            for (var e = 0; e < selectors.length; e++) {
                 if (config.description == "Interaktionen"){
 
                 } else {
@@ -431,15 +451,15 @@ function processFeed(config,domNode, currentObject){
 /* handels the Action for a given config node and domNode and appends it to the currentObject */
 function handleActions(config, domNode, currentObject){
     if (config.attribute.startsWith("attr-")){
-        currentObject[config.column] = domNode.getAttribute(config.attribute.substr(5,config.attribute.length-5));  
+        currentObject[config.column] = domNode.getAttribute(config.attribute.substr(5,config.attribute.length-5));
     } else{
         if (config.attribute.startsWith("data-")){
             var dataObjStr = config.attribute.substr(5,config.attribute.length-5);
-            currentObject[config.column] = domNode.dataset.dataObjStr;   
+            currentObject[config.column] = domNode.dataset.dataObjStr;
         } else {
             if (config.attribute.startsWith("static-")){
                 var dataObjStr = config.attribute.substr(7,config.attribute.length-7);
-                currentObject[config.column] = domNode.dataset.dataObjStr;   
+                currentObject[config.column] = domNode.dataset.dataObjStr;
             } else {
                 switch (config.attribute) {
                     case 'text':
@@ -447,7 +467,7 @@ function handleActions(config, domNode, currentObject){
                         break;
                     case 'html':
                         currentObject[config.column] = domNode.innerHTML;
-                        break;   
+                        break;
                     case 'exists':
                         currentObject[config.column] = true;
                         break;
@@ -483,7 +503,7 @@ function handleActions(config, domNode, currentObject){
             }
         }
     }
-    
+
     if (config.anonymize == 1){
         currentObject[config.column] = CryptoJS.SHA3(currentObject[config.column], { outputLength: 224 }).toString();
     }
@@ -491,15 +511,15 @@ function handleActions(config, domNode, currentObject){
 
 /**
  * Calls the register function and registers the Plugin.
- * 
- * 
+ *
+ *
  */
 function restRegister(responseFunction){
     storage.get('identifier_password',function(resp){
-    var password = resp.identifier_password;  
+    var password = resp.identifier_password;
     if (password){
         storage.get('identifier_human',function(resp){
-            var human = resp.identifier_human;  
+            var human = resp.identifier_human;
             if (human){
               var sNonce = CryptoJS.lib.WordArray.random(16).toString();
               var sBody = {        //Body to be sent
@@ -516,7 +536,7 @@ function restRegister(responseFunction){
                   storage.set({plugin_uid:response.data.result['uid']},function(){
                     storage.set({usingDevConfig:false},function(){});
                     responseFunction({worked:true});
-                    getConfig();   
+                    getConfig();
                     checkIfMessageUpdate();
                   });
               });
@@ -530,7 +550,7 @@ function restRegister(responseFunction){
                 }
               });
             }
-        });  
+        });
     }
     });
 }
@@ -539,7 +559,7 @@ function restRegister(responseFunction){
 function getConfig(){
     getRequest("https://fbforschung.de/config",null,parseConfig);
 }
-                
+
 /** Performs a restGet where PluginID and Password get loaded form Storage
   *
   * @param {string} _sUrl Url to call
@@ -547,24 +567,24 @@ function getConfig(){
  */
 function getRequest(_sUrl,_sBody,_fCallback){
     storage.get('plugin_uid',function(resp){
-        var plugin_uid = resp.plugin_uid;  
+        var plugin_uid = resp.plugin_uid;
         if (plugin_uid){
             storage.get('identifier_password',function(resp){
-                var password = resp.identifier_password;  
+                var password = resp.identifier_password;
                 if (password){
                     restGET(plugin_uid,_sUrl,password,_fCallback,_sBody);
                 }
             });
         }
 
-    }); 
+    });
 }
 
 
 
 /**
  * Retrieve data from the REST API using a GET request.
- * 
+ *
  * @param {integer}  _nPlugin   plugin UID for authentication
  * @param {string}   _sUrl      full URL to call
  * @param {function} _fCallback callback function with (at least) one JS object parameter
@@ -603,16 +623,13 @@ function restGET(_nPlugin, _sUrl,_sPassword, _fCallback, _sBody) {
 * Saves standart Config to local Storage
 */
 function parseConfig(config){
-    
+
     var isUsingdev = isUsingDevConfig();
     if (isUsingdev == true){
          storage.set({devconfig:config.result},function(){
-         });    
+         });
     } else {
     storage.set({config:config.result},function(){
          });
     }
 }
-
-
-

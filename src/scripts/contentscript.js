@@ -19,7 +19,7 @@ ext.runtime.onMessage.addListener(
 
 document.head.appendChild(document.createElement('script')).text = '(' +
     function () {
-        // injected DOM script is not a content script anymore, 
+        // injected DOM script is not a content script anymore,
         // it can modify objects and functions of the page
         var _pushState = history.pushState;
         history.pushState = function (state, title, url) {
@@ -39,11 +39,11 @@ window.addEventListener('state-changed', function (e) {
 
 function updateIcon() {
     if (document.location.href == 'https://www.facebook.com/') {
-        ext.runtime.sendMessage({
+        ext.runtime.sendMessage({"action":"updateIcon",
             "newIconPath": 'Icons/icon-16.png'
         });
     } else {
-        ext.runtime.sendMessage({
+        ext.runtime.sendMessage({"action":"updateIcon",
             "newIconPath": 'Icons/icon-16-inactive.png'
         });
     }
@@ -69,14 +69,12 @@ function scrollHandler() {
     scrollIndex += 1;
     if (scrollIndex >= nextScrollGoal) {
         nextScrollGoal += 50;
-        
+
         ext.runtime.sendMessage({ action: 'process-feed', data: document.body.innerHTML, scrolledUntil:document.body.getBoundingClientRect().top *(-1)},function(result){
-     });  
+     });
     }
 }
  ext.runtime.sendMessage({ action: 'opened-facebook', data: document.body.innerHTML, scrolledUntil:scrollIndex},function(result){}); // messages the background page to update various data, like messages and config
 
 ext.runtime.sendMessage({ action: 'process-feed', data: document.body.innerHTML, scrolledUntil:0},function(result){
-     });  
-
-
+     });
