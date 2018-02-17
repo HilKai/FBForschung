@@ -3,6 +3,18 @@ import storage from "./utils/storage";
 
 var uid = 0;
 
+
+ext.runtime.sendMessage({action:"isPluginActive"},function(response){
+  if (!response.pluginStatus){
+      document.getElementById("Text").innerHTML ="Das Plugin ist derzeit inaktiv. Sie können es  <a id='activate' href='#'>hier</a> wieder aktivieren."
+      document.getElementById("activate").onclick = function (sender){
+        ext.runtime.sendMessage({"action":"activatePLugin"},function(response){
+        });
+        console.log("activatePLugin");
+        location.reload();
+      };
+  }
+});
 //gets config version and devConfig status form background script
 ext.runtime.sendMessage({action:"getInformation"},function(response){
     console.log(response);
@@ -28,4 +40,12 @@ ext.runtime.sendMessage({action:"getInformation"},function(response){
           ext.runtime.sendMessage({action:"putMessageonMessageStack",messageID:sender.target.attributes.value.value},function(reponse){});
         }
     }
+
+    document.getElementById("deactivate").onclick = function (sender){
+      ext.runtime.sendMessage({"action":"deactivatePlugin"},function(response){
+      });
+      location.reload();
+    };
+
+
 });

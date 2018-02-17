@@ -239,7 +239,12 @@ function handleRecRequest(id,Clientrect,bodyRect){
 ext.runtime.onMessage.addListener(
     function(request, sender, sendResponse) {
         if (request.action == "activatePLugin"){
+          console.log("activate");
           plugin_active = true;
+        }
+        if (request.action == "isPluginActive"){
+          console.log(plugin_active);
+          sendResponse({pluginStatus:plugin_active});
         }
         if (plugin_active == true){
             switch(request.action){
@@ -317,6 +322,9 @@ ext.runtime.onMessage.addListener(
                                         height: HEIGHT,
                                         type: "popup"});
                     break;
+                case "deactivatePlugin":
+                  plugin_active = false;
+                break;
                 case "updateIcon":            // read `newIconPath` from request and read `tab.id` from sender
                   ext.browserAction.setIcon({
                   path: request.newIconPath,
