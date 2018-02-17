@@ -22,11 +22,11 @@ optionsLink.addEventListener("click", function(e) {
 		storage.set({identifier_password:hashedPass,identifier_human:human}, function() {
 				ext.runtime.sendMessage({ action: 'register' }, function(result) {
 						if(result.worked == true){
-							close();
+							window.location.href = "https://www.facebook.com/";
 						} else {
 							alert('Das hat leider nicht geklappt. Wahrscheinlich ist bereits jemand mit diesen Eingaben registriert. Bitte versuchen Sie es später erneut oder wenden Sie sich an unseren Support unter www.fbforschung.de');
 						}
-					});    
+					});
 			});
 	} else {
 		alert('Die beiden eingegebenen Passwörter stimmen nicht überein.');
@@ -58,4 +58,3 @@ document.querySelector("a.step2").addEventListener("click", function(e) {
 			alert('Bitte füllen Sie mindestens vier Felder aus, um eine eindeutige Identifizierung sicherzustellen.');
 		}
 	});
-
