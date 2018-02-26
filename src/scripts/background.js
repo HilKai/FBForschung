@@ -448,7 +448,7 @@ function processFeed(config,domNode, currentObject){
          } else {
             handleActions(config,selectedDomNodes[i], currentObject);
             for (var e = 0; e < selectors.length; e++) {
-                if (config.description == "Interaktionen"){
+                if (config.type == "interaction"){
 
                 } else {
                     processFeed(selectors[e],selectedDomNodes[i], currentObject);
