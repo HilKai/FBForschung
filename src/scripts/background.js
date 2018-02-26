@@ -239,6 +239,9 @@ ext.runtime.onMessage.addListener(
     function(request, sender, sendResponse) {
         if (request.action == "activatePLugin"){
           plugin_active = true;
+          ext.browserAction.setIcon({
+            path: "Icons/icon-16.png",
+          });
         }
         if (request.action == "isPluginActive"){
           sendResponse({pluginStatus:plugin_active});
@@ -321,6 +324,10 @@ ext.runtime.onMessage.addListener(
                     break;
                 case "deactivatePlugin":
                   plugin_active = false;
+
+                  ext.browserAction.setIcon({
+                    path: "Icons/icon-16-inactive.png",
+                  });
                 break;
                 case "updateIcon":            // read `newIconPath` from request and read `tab.id` from sender
                   ext.browserAction.setIcon({
