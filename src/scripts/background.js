@@ -466,33 +466,130 @@ function processFeed(config,domNode, currentObject){
         interactionSelector.push({'css':runningcssSelector.split('[-~-]').join(' '),'id':config.uid});
       }
     }
+    var evaluateThisNode = false;
+    if ((config.if == true)&&(selectedDomNodes !=null)){
+      if ((config.hasOwnProperty('if_css'))&& (config.hasOwnProperty('if_attribute'))&&(config.hasOwnProperty('if_value'))){
+        var resCss = domNode.querySelector(config.if_css);
+        if (resCss != null){
+          var attribute = getAttribute(config.if_attribute, resCss);
+          if (evaluateConfigIF(config.if_value,config.if_comparison,attribute)){
+            console.log("evaluation true");
+            evaluateThisNode = true;
+          }
+        } else {
+          evaluateThisNode = true;
+        }
 
 
-
-    for (var i = 0; i < selectedDomNodes.length; i++) {
-         if (config.nodetype == "post") {
-            var post = {};
-            handleActions(config,selectedDomNodes[i], post);
-            for (var e = 0; e < selectors.length; e++) {
-              post = processFeed(selectors[e],selectedDomNodes[i], post);
-            }
-            if (!isEmpty(post)){
-                post['position_ordinal'] = i+1;
-                post['position_onscreen'] = selectedDomNodes[i].id + "top";
-                sendRecRequest(selectedDomNodes[i].id);
-                currentObject.posts.push(post);
-            }
-         } else {
-            handleActions(config,selectedDomNodes[i], currentObject);
-            for (var e = 0; e < selectors.length; e++) {
-                processFeed(selectors[e],selectedDomNodes[i], currentObject);
-            }
+      } else {
+        evaluateThisNode = true;
+      }
+    } else {
+      evaluateThisNode = true;
+    }
+    if (evaluateThisNode){
+      for (var i = 0; i < selectedDomNodes.length; i++) {
+        if (config.nodetype == "post") {
+          var post = {};
+          handleActions(config,selectedDomNodes[i], post);
+          for (var e = 0; e < selectors.length; e++) {
+            post = processFeed(selectors[e],selectedDomNodes[i], post);
+          }
+          if (!isEmpty(post)){
+            post['position_ordinal'] = i+1;
+            post['position_onscreen'] = selectedDomNodes[i].id + "top";
+            sendRecRequest(selectedDomNodes[i].id);
+            currentObject.posts.push(post);
+          }
+        } else {
+          handleActions(config,selectedDomNodes[i], currentObject);
+          for (var e = 0; e < selectors.length; e++) {
+            processFeed(selectors[e],selectedDomNodes[i], currentObject);
+          }
 
         }
+      }
     }
-        runningcssSelector = runningcssSelector.substr(0, runningcssSelector.lastIndexOf("[-~-]"));
+
+    runningcssSelector = runningcssSelector.substr(0, runningcssSelector.lastIndexOf("[-~-]"));
     return currentObject;
 }
+
+
+function evaluateConfigIF(ifValue,comparison,attribute){
+  switch(comparison){
+  case'equal':
+    return (ifValue==attribute);
+    break;
+  case'unequal':
+    return (ifValue != attribute);
+    break;
+  case'gt':
+    return (attribute > ifValue);
+    break;
+  case'gteq':
+    return (attribute >= ifValue);
+    break;
+  case'lt':
+    return (attribute < ifValue);
+    break;
+  case'lteq':
+    return (attribute <= ifValue);
+    break;
+  case'notcontains':
+    if (attribute.indexOf(ifValue) < 0){
+      return true;
+    } else {
+      return false;
+    }
+    break;
+case'contains':
+  if(attribute.indexOf(ifValue) >= 0){
+    return true;
+  } else {
+    return false;
+  }
+  break;
+  case'regex':
+    return ((new RegExp(ifValue)).test(attribute) == true);
+    break;
+  case'notregex':
+    return ((new RegExp(ifValue)).test(attribute) == false);
+    break;
+  }
+}
+
+function getAttribute(attribute, domNode){
+      if (attribute.startsWith("attr-")){
+          return domNode.getAttribute(attribute.substr(5,attribute.length-5));
+      } else{
+          if (attribute.startsWith("data-")){
+              var dataObjStr = attribute.substr(5,attribute.length-5);
+              return domNode.dataset[dataObjStr];
+          } else {
+              if (attribute.startsWith("static-")){
+                  var dataObjStr = attribute.substr(7,attribute.length-7);
+                  return domNode.dataset.dataObjStr;
+              } else {
+                  switch (attribute) {
+                      case 'text':
+                          return domNode.innerText;
+                          break;
+                      case 'html':
+                        return domNode.innerHTML;
+                          break;
+                      case 'exists':
+                          return  true;
+                          break;
+
+                          default:
+                          break;
+                  }
+              }
+          }
+      }
+}
+
 
 /* handels the Action for a given config node and domNode and appends it to the currentObject */
 function handleActions(config, domNode, currentObject){
