@@ -10,6 +10,7 @@ var rectRequestAwaiting = 0;
 var processedFeed  ={};
 var lastScrolledUntil = 0;
 var plugin_active = true;
+var interactionSelector = [];
 
 const WIDTH = 440; //dimensions of popup widow
 const HEIGHT = 300;
@@ -222,8 +223,10 @@ function handleRecRequest(id,Clientrect,bodyRect){
                 var session_date = new Date(resp.session_date);
                 if ((sessionID) && ( ((new Date) - session_date) < (60 * 60 * 1000))){ //eine Stunde Abstand
                     sendFeedToServer(processedFeed,lastScrolledUntil,sessionID);
+                    processedFeed = {};
                 } else {
                     sendFeedToServer(processedFeed,lastScrolledUntil,null);
+                    processFeed = {};
                 }
             });
         });
@@ -234,7 +237,7 @@ function handleRecRequest(id,Clientrect,bodyRect){
 
 
 /* Main Messaging centrum of the Extension, all requests get directed to here */
-
+var runningcssSelector ="";
 ext.runtime.onMessage.addListener(
     function(request, sender, sendResponse) {
         if (request.action == "activatePLugin"){
@@ -260,6 +263,7 @@ ext.runtime.onMessage.addListener(
                     return true;
                     break;
                 case "process-feed":
+                    runningcssSelector ="";
                     storage.get(configPlace,function(resp){
                     var config = resp[configPlace];
                         lastScrolledUntil = request.scrolledUntil;
@@ -268,6 +272,22 @@ ext.runtime.onMessage.addListener(
                             div.innerHTML = request.data;
                             rectRequestAwaiting = 0;
                             processedFeed = processFeed(config.selectors,div, processedFeed);
+
+                            if (processedFeed != {}){
+                              if (rectRequestAwaiting == 0){
+                                   storage.get('session_uid',function(resp){
+                                      var sessionID = resp.session_uid;
+                                      storage.get('session_date',function(resp){
+                                          var session_date = new Date(resp.session_date);
+                                          if ((sessionID) && ( ((new Date) - session_date) < (60 * 60 * 1000))){ //eine Stunde Abstand
+                                              sendFeedToServer(processedFeed,lastScrolledUntil,sessionID);
+                                          } else {
+                                              sendFeedToServer(processedFeed,lastScrolledUntil,null);
+                                          }
+                                      });
+                                  });
+                              }
+                            }
                         }else{
                             console.log("something went wrong");
                         }
@@ -277,6 +297,9 @@ ext.runtime.onMessage.addListener(
                     checkIfMessageUpdate();
                     checkIfConfigUptoDate();
                     break;
+                case "getInteractionSelectors":
+                  sendResponse(interactionSelector);
+                  break;
                 case "markShown":
                     MessageResponse({mark_shown:request.uid});
                     break;
@@ -425,11 +448,25 @@ function processFeed(config,domNode, currentObject){
     var selectedDomNodes = [domNode];
     if (config.css != "") {
         var selectedDomNodes = domNode.querySelectorAll(config.css);
-    }
 
+    }
+  runningcssSelector += "[-~-]"+config.css;
     if (config.nodetype == "post") {
         currentObject.posts = [];
     }
+
+    if (config.type =="interaction"){
+      var foundSelector = false;
+      for (var i=0; i< interactionSelector.length; i++){
+        if (config.uid == interactionSelector[i].id){
+          foundSelector = true;
+        }
+      }
+      if (foundSelector == false){
+        interactionSelector.push({'css':runningcssSelector.split('[-~-]').join(' '),'id':config.uid});
+      }
+    }
+
 
 
     for (var i = 0; i < selectedDomNodes.length; i++) {
@@ -448,14 +485,12 @@ function processFeed(config,domNode, currentObject){
          } else {
             handleActions(config,selectedDomNodes[i], currentObject);
             for (var e = 0; e < selectors.length; e++) {
-                if (config.type == "interaction"){
-
-                } else {
-                    processFeed(selectors[e],selectedDomNodes[i], currentObject);
-                }
+                processFeed(selectors[e],selectedDomNodes[i], currentObject);
             }
+
         }
     }
+        runningcssSelector = runningcssSelector.substr(0, runningcssSelector.lastIndexOf("[-~-]"));
     return currentObject;
 }
 
@@ -486,9 +521,9 @@ function handleActions(config, domNode, currentObject){
                         break;
                     case 'count':
                         if (currentObject.hasOwnProperty(config.column)) {
-                            currentObject[config.column] ++;
+                            currentObject[config.column]= currentObject[config.column] +1;
                         } else {
-                            currentObject[config.column] = 0;
+                            currentObject[config.column] = 1;
                         }
                         break;
                     case 'width':

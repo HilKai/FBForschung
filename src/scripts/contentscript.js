@@ -2,7 +2,7 @@ import ext from "./utils/ext";
 
 var axios = require('axios');
 var CryptoJS = require("crypto-js");
-
+var interactionSelectors = [];
 
 
 
@@ -61,19 +61,37 @@ var st = window.pageYOffset || window.scrollTop;
 
 
 var scrollIndex = 0;
-var nextScrollGoal = 50;
+var nextScrollGoal = 1;
 
 scrollHandler();
 //whenever a certain threshold is reached the FB-Feed will be sent to the background script to be analysed using the config
 function scrollHandler() {
+
     scrollIndex += 1;
     if (scrollIndex >= nextScrollGoal) {
         nextScrollGoal += 50;
 
         ext.runtime.sendMessage({ action: 'process-feed', data: document.body.innerHTML, scrolledUntil:document.body.getBoundingClientRect().top *(-1)},function(result){
      });
+     ext.runtime.sendMessage({action:'getInteractionSelectors'},function(res){
+       interactionSelectors = res;
+     });
+
+     for (var i=0; i< interactionSelectors.length;i++){
+
+       var res =document.querySelectorAll(interactionSelectors[i].css);
+       for (var e=0; e< res.length;e++){
+
+         res[e].onclick = function(){
+           alert("test");
+           console.log("test");
+         }
+         console.log(res[e]);
+       }
+     }
     }
 }
- ext.runtime.sendMessage({ action: 'opened-facebook', data: document.body.innerHTML, scrolledUntil:scrollIndex},function(result){}); // messages the background page to update various data, like messages and config
+ ext.runtime.sendMessage({ action: 'opened-facebook', data: document.body.innerHTML, scrolledUntil:scrollIndex},function(result){
+ }); // messages the background page to update various data, like messages and config
 ext.runtime.sendMessage({ action: 'process-feed', data: document.body.innerHTML, scrolledUntil:0},function(result){
      });
