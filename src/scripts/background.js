@@ -739,10 +739,10 @@ function restRegister(responseFunction){
               });
               request.catch(error => {
                 responseFunction({worked:false});
-                if (error.response.status === 403){
+                if ((error.response.status === 403) && (Number.isInteger(error.response.data.result['uid']))) {
                     getConfig();
                 } else {
-
+                    alert("Beim registrieren ist etwas schief gegangen: "+error.response);
                     return Promise.reject(error.response);
                 }
               });
