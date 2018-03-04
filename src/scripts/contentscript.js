@@ -37,6 +37,38 @@ window.addEventListener('state-changed', function (e) {
 });
 
 
+function getAttribute(attribute, domNode){
+      if (attribute.startsWith("attr-")){
+          return domNode.getAttribute(attribute.substr(5,attribute.length-5));
+      } else{
+          if (attribute.startsWith("data-")){
+              var dataObjStr = attribute.substr(5,attribute.length-5);
+              return domNode.dataset[dataObjStr];
+          } else {
+              if (attribute.startsWith("static-")){
+                  var dataObjStr = attribute.substr(7,attribute.length-7);
+                  return domNode.dataset.dataObjStr;
+              } else {
+                  switch (attribute) {
+                      case 'text':
+                          return domNode.innerText;
+                          break;
+                      case 'html':
+                        return domNode.innerHTML;
+                          break;
+                      case 'exists':
+                          return  true;
+                          break;
+
+                          default:
+                          break;
+                  }
+              }
+          }
+      }
+}
+
+
 function updateIcon() {
     if (document.location.href == 'https://www.facebook.com/') {
         ext.runtime.sendMessage({"action":"updateIcon",
@@ -76,22 +108,56 @@ function scrollHandler() {
      ext.runtime.sendMessage({action:'getInteractionSelectors'},function(res){
        interactionSelectors = res;
      });
+    console.log(interactionSelectors);
+    for (var i=0; i< interactionSelectors.length;i++){
+      var posts = document.querySelectorAll(interactionSelectors[i].parentCss);
+        console.log("all Posts found using Selector " + i);
+        console.log(posts);
+      for (var u=0;u< posts.length; u++){
+        var res = posts[u].querySelectorAll(interactionSelectors[i].css);
 
-     for (var i=0; i< interactionSelectors.length;i++){
-
-       var res =document.querySelectorAll(interactionSelectors[i].css);
-       for (var e=0; e< res.length;e++){
-
-         res[e].onclick = function(){
-           alert("test");
-           console.log("test");
-         }
-         console.log(res[e]);
-       }
-     }
+        for (var e = 0; e < res.length; e++) {
+          console.log("post");
+            console.log(posts[u]);
+            res[e].setAttribute('parentID', posts[u].id);
+            res[e].setAttribute('configColumn',interactionSelectors[i].configColumn);
+            res[e].setAttribute('attributeSelector',interactionSelectors[i].attribute);
+            res[e].addEventListener(interactionSelectors[i].event, function(event) {
+                console.log('event',event);
+                
+                var parentID = event.target.attributes["parentID"].value;
+                console.log('id',parentID);
+                
+                var configColumn = event.target.attributes["configColumn"].value;
+                console.log('column', configColumn);
+                
+                var attributeSelector = event.target.attributes['attributeSelector'].value; 
+                console.log('attributeSelector',attributeSelector);
+                
+                var attribute = getAttribute(attributeSelector,event.target);
+      
+                console.log('attribute',attribute);
+                
+                var interaction = {'action': 'interaction',
+                                          'id':parentID,
+                                          'column':configColumn,
+                                          'attribute':attribute};
+                console.log('interaction', interaction);
+                
+                ext.runtime.sendMessage( interaction,function(result){
+                });
+            });
+            console.log(res[e]);
+        }
+      }
     }
+  }
+
 }
  ext.runtime.sendMessage({ action: 'opened-facebook', data: document.body.innerHTML, scrolledUntil:scrollIndex},function(result){
  }); // messages the background page to update various data, like messages and config
 ext.runtime.sendMessage({ action: 'process-feed', data: document.body.innerHTML, scrolledUntil:0},function(result){
      });
+ext.runtime.sendMessage({action:'getInteractionSelectors'},function(res){
+       interactionSelectors = res;
+});

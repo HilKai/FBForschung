@@ -352,6 +352,58 @@ ext.runtime.onMessage.addListener(
                     path: "Icons/icon-16-inactive.png",
                   });
                 break;
+                case "interaction":
+                    var interactionPost = {};
+                    storage.get('session_uid',function(resp){
+                        if (resp.session_uid){
+                            interactionPost['session_uid'] = resp.session_uid;
+                        }
+                    });
+
+                    interactionPost['facebook_id'] = request.id;
+                    interactionPost['type'] = request.column.split('_')[1];
+                    if (request.attribute != null){
+                      interactionPost['attribute'] = request.attribute;
+                    }
+                    console.log('interaction', interactionPost);
+                    storage.get('identifier_password',function(resp){
+                        var password = resp.identifier_password;
+                        if (password){
+                            storage.get('plugin_uid',function(resp){
+                                var plugin_uid = resp.plugin_uid;
+                                if (plugin_uid){
+                                    var sNonce = CryptoJS.lib.WordArray.random(16).toString();
+                                    var sBody = interactionPost;
+                                    var sUrl = 'https://fbforschung.de/interaction'; //serverside url to call
+                                    const request= axios.post(sUrl,sBody,
+                                    { headers:{
+                                        "X-Auth-Key" : sNonce,
+                                        "X-Auth-Checksum":CryptoJS.HmacSHA1(sUrl + JSON.stringify(sBody) +  sNonce, password).toString(),
+                                        "X-Auth-Plugin" : plugin_uid,
+                                        "Content-Type" : "application/json"
+                                    }});
+                                    request.then((response)=>{
+                                        var timestamp = new Date();
+                                        timestamp = timestamp.toString();
+                                        storage.set({session_uid:response.data.result['uid'],
+                                                     session_date: timestamp},function(){
+                                        });
+                                    });
+                                    request.catch(error => {
+                                        var timestamp = new Date();
+                                        timestamp = timestamp.toString();
+                                        storage.set({toBeSent:feed,
+                                                     createdAt: timestamp},function(){
+                                        });
+                                    });
+                                }
+                            });
+                        }
+                    });
+
+                break;
+
+
                 case "updateIcon":            // read `newIconPath` from request and read `tab.id` from sender
                   ext.browserAction.setIcon({
                   path: request.newIconPath,
@@ -443,6 +495,7 @@ function isEmpty(obj) {
  * @Param currentObject - object in which the Session Package will be stored
  * this will be recursevly called, reducing the config and data in the Process
 */
+var postCssSelector ="";
 function processFeed(config,domNode, currentObject){
     var selectors = config.selectors;
     var selectedDomNodes = [domNode];
@@ -453,6 +506,7 @@ function processFeed(config,domNode, currentObject){
   runningcssSelector += "[-~-]"+config.css;
     if (config.nodetype == "post") {
         currentObject.posts = [];
+        postCssSelector = config.css;
     }
 
     if (config.type =="interaction"){
@@ -463,7 +517,7 @@ function processFeed(config,domNode, currentObject){
         }
       }
       if (foundSelector == false){
-        interactionSelector.push({'css':runningcssSelector.split('[-~-]').join(' '),'id':config.uid});
+        interactionSelector.push({'css':runningcssSelector.split('[-~-]').join(' '),'id':config.uid,'event':config.event,'parentCss':postCssSelector,'attribute':config.attribute,'configColumn':config.column});
       }
     }
     var evaluateThisNode = false;
@@ -473,7 +527,6 @@ function processFeed(config,domNode, currentObject){
         if (resCss != null){
           var attribute = getAttribute(config.if_attribute, resCss);
           if (evaluateConfigIF(config.if_value,config.if_comparison,attribute)){
-            console.log("evaluation true");
             evaluateThisNode = true;
           }
         } else {
