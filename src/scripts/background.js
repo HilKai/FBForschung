@@ -365,7 +365,6 @@ ext.runtime.onMessage.addListener(
                     if (request.attribute != null){
                       interactionPost['attribute'] = request.attribute;
                     }
-                    console.log('interaction', interactionPost);
                     storage.get('identifier_password',function(resp){
                         var password = resp.identifier_password;
                         if (password){

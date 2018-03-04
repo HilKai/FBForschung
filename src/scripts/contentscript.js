@@ -111,38 +111,21 @@ function scrollHandler() {
     console.log(interactionSelectors);
     for (var i=0; i< interactionSelectors.length;i++){
       var posts = document.querySelectorAll(interactionSelectors[i].parentCss);
-        console.log("all Posts found using Selector " + i);
-        console.log(posts);
       for (var u=0;u< posts.length; u++){
         var res = posts[u].querySelectorAll(interactionSelectors[i].css);
-
         for (var e = 0; e < res.length; e++) {
-          console.log("post");
-            console.log(posts[u]);
             res[e].setAttribute('parentID', posts[u].id);
             res[e].setAttribute('configColumn',interactionSelectors[i].configColumn);
             res[e].setAttribute('attributeSelector',interactionSelectors[i].attribute);
             res[e].addEventListener(interactionSelectors[i].event, function(event) {
-                console.log('event',event);
-                
                 var parentID = event.target.attributes["parentID"].value;
-                console.log('id',parentID);
-                
                 var configColumn = event.target.attributes["configColumn"].value;
-                console.log('column', configColumn);
-                
                 var attributeSelector = event.target.attributes['attributeSelector'].value; 
-                console.log('attributeSelector',attributeSelector);
-                
                 var attribute = getAttribute(attributeSelector,event.target);
-      
-                console.log('attribute',attribute);
-                
                 var interaction = {'action': 'interaction',
                                           'id':parentID,
                                           'column':configColumn,
                                           'attribute':attribute};
-                console.log('interaction', interaction);
                 
                 ext.runtime.sendMessage( interaction,function(result){
                 });
