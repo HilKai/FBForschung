@@ -1,18 +1,17 @@
 {
-  "name": "__MSG_appName__",
-  "version": "0.0.1",
+  "name": "FBforschung.de Browser-Plugin",
+  "version": "0.6.0",
   "manifest_version": 2,
-  "description": "__MSG_appDescription__",
+  "description": "Dieses Browser-Plugin sammelt sehr selektiv öffentliche Informationen im Rahmen der Facebook-Nutzung für das Forschungsprojekt FBforschung.de.",
   "icons": {
     "16": "icons/icon-16-inactive.png",
     "128": "icons/icon-128.png"
   },
-  "default_locale": "en",
   "background": {
     "scripts": [
       "scripts/background.js"
     ],
-       "persistent": false
+    "persistent": false
   },
   "permissions": [
     "tabs",
@@ -40,9 +39,7 @@
     "default_icon": {
       "16":"icons/icon-16-inactive.png"
     },
-    "default_title": "Facebook Datenspende",
+    "default_title": "FBforschung.de",
     "default_popup": "information.html"
   }
 }
-
-

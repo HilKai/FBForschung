@@ -1,34 +1,34 @@
-<html>
+<!DOCTYPE html>
+<html lang="de">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <link rel="shortcut icon" href="icons/favicon.ico" type="image/x-icon">
+    <link rel="icon" href="icons/favicon.ico" type="image/x-icon">
 
-    <!-- Bootstrap CSS -->
-    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-beta.3/css/bootstrap.min.css" integrity="sha384-Zug+QiDoJOrZ5t4lssLdxGhVrurbmBWopoEl+M6BdEfwnCJZtKxi1KgxUyJq13dy" crossorigin="anonymous">
-    <link href="https://fonts.googleapis.com/icon?family=Material+Icons"
-      rel="stylesheet">
-    <link rel="stylesheet" href="styles/registration.css">
-  <title>Registrieren</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+    <!-- <link rel="stylesheet" href="styles/bootstrap.min.css"> -->
+
+    <link rel="stylesheet" href="styles/options.css">
+    <title>FBforschung: Einstellungen</title>
 </head>
 <body>
-    
     <div class="container-fluid">
         <div class="row">
             <div class="col-2">
                 <img src="icons/icon-48.png" alt="Icon FB-Forschung" />
             </div>
             <div class="col-10">
-                <h2>FB-Forschung</h2>
-                <p id ="PLuginVersion" class="text-muted">Plugin-Version: ###</p>
+                <h2>FBforschung.de</h2>
+                <p id ="PluginVersion" class="text-muted">Plugin-Version: ###</p>
             </div>
         </div>
-        <h3>Entwickler-Konfiguration beziehen</h3>
+        <h3>Test-Konfiguration</h3>
         <p>
-           
             <input id="devConfigCheck" type="checkbox" >
-            Wenn diese Checkbox aktiviert ist, wird statt der derzeitigen Live-Konfiguration die aktuelle Entwickler-Konfiguration vom Server bezogen und verwendet.
+            Zu Entwicklungs- und Testzwecken kann diese Option aktiviert werden, um statt der derzeitigen Live-Konfiguration die aktuelle Entwicklungs-Konfiguration vom Server zu beziehen und zu verwenden.
         </p>
     </div>
-<script src="scripts/options.js"></script>
+    <script src="scripts/options.js"></script>
 </body>
 </html>
