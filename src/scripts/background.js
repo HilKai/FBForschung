@@ -300,7 +300,7 @@ ext.runtime.onMessage.addListener(
                                               sendFeedToServer(processedFeed,lastScrolledUntil,null);
                                           }
                                       });
-                                  });
+                                   });
                               }
                             }
                         }else{
@@ -751,12 +751,19 @@ function restRegister(responseFunction){
                   });
               });
               request.catch(error => {
-                responseFunction({worked:false});
-                if ((error.response.status === 403) && (Number.isInteger(error.response.data.result['uid']))) {
-                    getConfig();
-                } else {
-                    alert("Beim registrieren ist etwas schief gegangen: "+error.response);
+                if (error.response.status ===403){
+                  if (error.response.data.hasOwnProperty('uid')){
+                      responseFunction({worked:true});
+                      getConfig();
+                  } else {
+                    responseFunction({worked:false});
+                    alert("Sie sind bereits mit dieser Kennung registriert. Bitte geben Sie zur weiteren Teilnahme dasselbe Passwort ein, das Sie auch bisher verwendet haben. Das gerade eingegebene Passwort ist falsch.");
                     return Promise.reject(error.response);
+                  }
+                } else {
+                  alert("Etwas ist schief gegangen");
+                  responseFunction({worked:false});
+                  return Promise.reject(error.response);
                 }
               });
             }

@@ -21,11 +21,10 @@ optionsLink.addEventListener("click", function(e) {
 				   document.getElementById('eye').value;
 		storage.set({identifier_password:hashedPass,identifier_human:human}, function() {
 				ext.runtime.sendMessage({ action: 'register' }, function(result) {
+          console.log(result);
 						if(result.worked == true){
 							window.location.href = "https://www.facebook.com/";
-						} else {
-							alert('Das hat leider nicht geklappt. Wahrscheinlich ist bereits jemand mit diesen Eingaben registriert. Bitte versuchen Sie es später erneut oder wenden Sie sich an unseren Support unter www.fbforschung.de');
-						}
+						} 
 					});
 			});
 	} else {
