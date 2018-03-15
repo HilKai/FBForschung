@@ -63,7 +63,6 @@ function handleOptionCall(resp){
 }
 
 function handleInformationCall(resp){
-    checkIfMessageUpdate();
     storage.get(configPlace,function(response){
         var version = response.config.version;
         storage.get('identifier_human',function(response){
@@ -749,7 +748,6 @@ function restRegister(responseFunction){
                     storage.set({usingDevConfig:false},function(){});
                     responseFunction({worked:true});
                     getConfig();
-                    checkIfMessageUpdate();
                   });
               });
               request.catch(error => {
