@@ -35,8 +35,18 @@ document.head.appendChild(document.createElement('script')).text = '(' +
 window.addEventListener('state-changed', function (e) {
     updateIcon();       //to get the Icon to update we need to inject a bit of code into the dom
 });
-
-
+function updateIcon() {
+    if (document.location.href == 'https://www.facebook.com/') {
+        ext.runtime.sendMessage({"action":"updateIcon",
+            "facebookopen": 'true'
+        });
+    } else {
+        ext.runtime.sendMessage({"action":"updateIcon",
+            "facebookopen": 'false'
+        });
+    }
+}
+updateIcon();
 function getAttribute(attribute, domNode){
       if (attribute.startsWith("attr-")){
           return domNode.getAttribute(attribute.substr(5,attribute.length-5));
@@ -69,19 +79,6 @@ function getAttribute(attribute, domNode){
 }
 
 
-function updateIcon() {
-    if (document.location.href == 'https://www.facebook.com/') {
-        ext.runtime.sendMessage({"action":"updateIcon",
-            "newIconPath": 'Icons/icon-16.png'
-        });
-    } else {
-        ext.runtime.sendMessage({"action":"updateIcon",
-            "newIconPath": 'Icons/icon-16-inactive.png'
-        });
-    }
-}
-
-updateIcon();
 var lastScrollTop = 0;
 window.onscroll = function (e) {
 var st = window.pageYOffset || window.scrollTop;
@@ -108,7 +105,6 @@ function scrollHandler() {
      ext.runtime.sendMessage({action:'getInteractionSelectors'},function(res){
        interactionSelectors = res;
      });
-    console.log(interactionSelectors);
     for (var i=0; i< interactionSelectors.length;i++){
       var posts = document.querySelectorAll(interactionSelectors[i].parentCss);
       for (var u=0;u< posts.length; u++){
@@ -120,17 +116,16 @@ function scrollHandler() {
             res[e].addEventListener(interactionSelectors[i].event, function(event) {
                 var parentID = event.target.attributes["parentID"].value;
                 var configColumn = event.target.attributes["configColumn"].value;
-                var attributeSelector = event.target.attributes['attributeSelector'].value; 
+                var attributeSelector = event.target.attributes['attributeSelector'].value;
                 var attribute = getAttribute(attributeSelector,event.target);
                 var interaction = {'action': 'interaction',
                                           'id':parentID,
                                           'column':configColumn,
                                           'attribute':attribute};
-                
+
                 ext.runtime.sendMessage( interaction,function(result){
                 });
             });
-            console.log(res[e]);
         }
       }
     }

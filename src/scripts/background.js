@@ -242,12 +242,28 @@ ext.runtime.onMessage.addListener(
     function(request, sender, sendResponse) {
         if (request.action == "activatePLugin"){
           plugin_active = true;
-          ext.browserAction.setIcon({
-            path: "Icons/icon-16.png",
+          chrome.tabs.query({url: "https://www.facebook.com/"}, function(results) {
+            for (var i=0;i< results.length;i++){
+              ext.browserAction.setIcon({
+
+                path: 'Icons/icon-16.png',
+                tabId: results[i].id
+              });
+            }
           });
         }
         if (request.action == "isPluginActive"){
           sendResponse({pluginStatus:plugin_active});
+        }
+        if (request.action == "updateIcon"){
+          var iconPath = "Icons/icon-16-inactive.png";
+          if ((request.facebookopen == 'true')&&(plugin_active == true)){
+            iconPath = "Icons/icon-16.png";
+          }
+          ext.browserAction.setIcon({
+            path: iconPath,
+            tabId: sender.tab.id
+          });
         }
         if (plugin_active == true){
             switch(request.action){
@@ -347,9 +363,14 @@ ext.runtime.onMessage.addListener(
                     break;
                 case "deactivatePlugin":
                   plugin_active = false;
+                  chrome.tabs.query({url: "https://www.facebook.com/"}, function(results) {
+                    for (var i=0;i< results.length;i++){
+                      ext.browserAction.setIcon({
 
-                  ext.browserAction.setIcon({
-                    path: "Icons/icon-16-inactive.png",
+                        path: 'Icons/icon-16-inactive.png',
+                        tabId: results[i].id
+                      });
+                    }
                   });
                 break;
                 case "interaction":
@@ -402,14 +423,8 @@ ext.runtime.onMessage.addListener(
 
                 break;
 
+              }
 
-                case "updateIcon":            // read `newIconPath` from request and read `tab.id` from sender
-                  ext.browserAction.setIcon({
-                  path: request.newIconPath,
-                  tabId: sender.tab.id
-                  });
-                  break;
-                }
             }
         }
 );

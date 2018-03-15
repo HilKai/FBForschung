@@ -4,7 +4,6 @@ import storage from "./utils/storage";
 
 //gets config version and devConfig status form background script
 ext.runtime.sendMessage({action:"getOption"},function(response){
-    console.log(response);
     document.getElementById("PLuginVersion").innerHTML = response.version;
     document.getElementById("devConfigCheck").checked = response.isdevConfig;
 });
@@ -17,6 +16,3 @@ document.getElementById("devConfigCheck").onclick= function toggleDev(){
     ext.runtime.sendMessage({action:"setDevConfigStatus",devConfig:usingDevConfig},function(response){
     });
 }
-
-
-
