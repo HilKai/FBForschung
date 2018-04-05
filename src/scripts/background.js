@@ -79,6 +79,93 @@ function handleInformationCall(resp){
     });
 }
 
+/*
+ * Processes the user-feed
+ * @Param config - config used to evaluate the feed
+ * @Param domNodes - user Feed from Facebook
+ * @Param currentObject - object in which the Session Package will be stored
+ * this will be recursevly called, reducing the config and data in the Process
+*/
+var postCssSelector ="";
+function processFeed(config,domNode, currentObject){
+    var selectors = config.selectors;
+    var selectedDomNodes = [domNode];
+    if (config.css != "") {
+        var selectedDomNodes = domNode.querySelectorAll(config.css);
+
+    }
+  runningcssSelector += "[-~-]"+config.css;
+    if (config.nodetype == "post") {
+        currentObject.posts = [];
+        postCssSelector = config.css;
+    }
+
+    if (config.type =="interaction"){
+      var foundSelector = false;
+      for (var i=0; i< interactionSelector.length; i++){
+        if (config.uid == interactionSelector[i].id){
+          foundSelector = true;
+        }
+      }
+      if (foundSelector == false){
+        interactionSelector.push({'css':runningcssSelector.split('[-~-]').join(' '),'id':config.uid,'event':config.event,'parentCss':postCssSelector,'attribute':config.attribute,'configColumn':config.column});
+      }
+    }
+    var evaluateThisNode = false;
+    if ((config.if == true)&&(selectedDomNodes !=null)){
+      if ((config.hasOwnProperty('if_css'))&& (config.hasOwnProperty('if_attribute'))&&(config.hasOwnProperty('if_value'))){
+        var resCss = domNode.querySelector(config.if_css);
+
+        if (resCss != null){
+          console.log('runnningcss',runningcssSelector.split('[-~-]').join(' '));
+          console.log("node",domNode);
+          console.log("if_css",config.if_css);
+          console.log("ergebniss",resCss);
+          console.log('config',config);
+
+          var attribute = getAttribute(config.if_attribute, resCss);
+          console.log('attribute',attribute);
+          console.log('evaluate',evaluateConfigIF(config.if_value,config.if_comparison,attribute) )
+          if (evaluateConfigIF(config.if_value,config.if_comparison,attribute)){
+            evaluateThisNode = true;
+          }
+        } else {
+          evaluateThisNode = true;
+        }
+      } else {
+        evaluateThisNode = true;
+      }
+    } else {
+      evaluateThisNode = true;
+    }
+    console.log(evaluateThisNode);
+    if (evaluateThisNode){
+      for (var i = 0; i < selectedDomNodes.length; i++) {
+        if (config.nodetype == "post") {
+          var post = {};
+          handleActions(config,selectedDomNodes[i], post);
+          for (var e = 0; e < selectors.length; e++) {
+            post = processFeed(selectors[e],selectedDomNodes[i], post);
+          }
+          if (!isEmpty(post)){
+            post['position_ordinal'] = i+1;
+            post['position_onscreen'] = selectedDomNodes[i].id + "top";
+            sendRecRequest(selectedDomNodes[i].id);
+            currentObject.posts.push(post);
+          }
+        } else {
+          handleActions(config,selectedDomNodes[i], currentObject);
+          for (var e = 0; e < selectors.length; e++) {
+            processFeed(selectors[e],selectedDomNodes[i], currentObject);
+          }
+
+        }
+      }
+    }
+
+    runningcssSelector = runningcssSelector.substr(0, runningcssSelector.lastIndexOf("[-~-]"));
+    return currentObject;
+}
 
 
 /* forwards a Message as E-Mail
@@ -225,7 +312,7 @@ function handleRecRequest(id,Clientrect,bodyRect){
                     processedFeed = {};
                 } else {
                     sendFeedToServer(processedFeed,lastScrolledUntil,null);
-                    processFeed = {};
+                    processedFeed = {};
                 }
             });
         });
@@ -286,8 +373,7 @@ ext.runtime.onMessage.addListener(
                             var div = document.createElement("div");
                             div.innerHTML = request.data;
                             rectRequestAwaiting = 0;
-                            processedFeed = processFeed(config.selectors,div, processedFeed);
-
+                            processFeed(config.selectors,div, processedFeed);
                             if (processedFeed != {}){
                               if (rectRequestAwaiting == 0){
                                    storage.get('session_uid',function(resp){
@@ -309,8 +395,13 @@ ext.runtime.onMessage.addListener(
                     });
                     break;
                 case "opened-facebook":                 // we need this to update our Messages and Configs
+
+                    storage.set({"session_date":0},function(){});
+
                     checkIfMessageUpdate();
                     checkIfConfigUptoDate();
+
+
                     break;
                 case "getInteractionSelectors":
                   sendResponse(interactionSelector);
@@ -501,85 +592,6 @@ function isEmpty(obj) {
 
 
 
-/*
- * Processes the user-feed
- * @Param config - config used to evaluate the feed
- * @Param domNodes - user Feed from Facebook
- * @Param currentObject - object in which the Session Package will be stored
- * this will be recursevly called, reducing the config and data in the Process
-*/
-var postCssSelector ="";
-function processFeed(config,domNode, currentObject){
-    var selectors = config.selectors;
-    var selectedDomNodes = [domNode];
-    if (config.css != "") {
-        var selectedDomNodes = domNode.querySelectorAll(config.css);
-
-    }
-  runningcssSelector += "[-~-]"+config.css;
-    if (config.nodetype == "post") {
-        currentObject.posts = [];
-        postCssSelector = config.css;
-    }
-
-    if (config.type =="interaction"){
-      var foundSelector = false;
-      for (var i=0; i< interactionSelector.length; i++){
-        if (config.uid == interactionSelector[i].id){
-          foundSelector = true;
-        }
-      }
-      if (foundSelector == false){
-        interactionSelector.push({'css':runningcssSelector.split('[-~-]').join(' '),'id':config.uid,'event':config.event,'parentCss':postCssSelector,'attribute':config.attribute,'configColumn':config.column});
-      }
-    }
-    var evaluateThisNode = false;
-    if ((config.if == true)&&(selectedDomNodes !=null)){
-      if ((config.hasOwnProperty('if_css'))&& (config.hasOwnProperty('if_attribute'))&&(config.hasOwnProperty('if_value'))){
-        var resCss = domNode.querySelector(config.if_css);
-        if (resCss != null){
-          var attribute = getAttribute(config.if_attribute, resCss);
-          if (evaluateConfigIF(config.if_value,config.if_comparison,attribute)){
-            evaluateThisNode = true;
-          }
-        } else {
-          evaluateThisNode = true;
-        }
-
-
-      } else {
-        evaluateThisNode = true;
-      }
-    } else {
-      evaluateThisNode = true;
-    }
-    if (evaluateThisNode){
-      for (var i = 0; i < selectedDomNodes.length; i++) {
-        if (config.nodetype == "post") {
-          var post = {};
-          handleActions(config,selectedDomNodes[i], post);
-          for (var e = 0; e < selectors.length; e++) {
-            post = processFeed(selectors[e],selectedDomNodes[i], post);
-          }
-          if (!isEmpty(post)){
-            post['position_ordinal'] = i+1;
-            post['position_onscreen'] = selectedDomNodes[i].id + "top";
-            sendRecRequest(selectedDomNodes[i].id);
-            currentObject.posts.push(post);
-          }
-        } else {
-          handleActions(config,selectedDomNodes[i], currentObject);
-          for (var e = 0; e < selectors.length; e++) {
-            processFeed(selectors[e],selectedDomNodes[i], currentObject);
-          }
-
-        }
-      }
-    }
-
-    runningcssSelector = runningcssSelector.substr(0, runningcssSelector.lastIndexOf("[-~-]"));
-    return currentObject;
-}
 
 
 function evaluateConfigIF(ifValue,comparison,attribute){
