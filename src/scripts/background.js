@@ -15,6 +15,12 @@ var interactionSelector = [];
 const WIDTH = 440; //dimensions of popup widow
 const HEIGHT = 300;
 
+storage.get("registered",function(resp){
+  if (resp.registered != true){
+    ext.tabs.create({'url': ext.extension.getURL('registration.html')});
+  }
+});
+
 storage.get("usingDevConfig",function(resp){
    if (resp){
        if (resp.usingDevConfig == true){
@@ -23,12 +29,6 @@ storage.get("usingDevConfig",function(resp){
    }
 });
 
-storage.get('plugin_uid',function(resp){
-    var plugin_uid = resp.plugin_uid;
-    if (!plugin_uid){
-        ext.tabs.create({'url': ext.extension.getURL('registration.html')});
-    }
-});
 
 
 
@@ -760,6 +760,7 @@ function restRegister(responseFunction){
                     storage.set({usingDevConfig:false},function(){});
                     responseFunction({worked:true});
                     getConfig();
+                    storage.set({"registered":true},function(){});
                   });
               });
               request.catch(error => {
@@ -767,6 +768,7 @@ function restRegister(responseFunction){
                   if (error.response.data.hasOwnProperty('uid')){
                       responseFunction({worked:true});
                       getConfig();
+                        storage.set({"registered":true},function(){});
                   } else {
                     responseFunction({worked:false});
                     alert("Sie sind bereits mit dieser Kennung registriert. Bitte geben Sie zur weiteren Teilnahme dasselbe Passwort ein, das Sie auch bisher verwendet haben. Das gerade eingegebene Passwort ist falsch.");
