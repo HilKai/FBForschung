@@ -10,8 +10,7 @@
   "background": {
     "scripts": [
       "scripts/background.js"
-    ],
-    "persistent": false
+    ]
   },
   "permissions": [
     "tabs",
@@ -25,7 +24,7 @@
   "content_scripts": [
     {
       "matches": [
-        "http://www.facebook.com/*", 
+        "http://www.facebook.com/*",
         "https://www.facebook.com/*"
       ],
       "js": [

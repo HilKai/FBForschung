@@ -11,9 +11,15 @@ var processedFeed  ={};
 var lastScrolledUntil = 0;
 var plugin_active = true;
 var interactionSelector = [];
+var openWindows = [];
 
 const WIDTH = 440; //dimensions of popup widow
 const HEIGHT = 300;
+
+function handleInstalled(details) {
+  storage.clear();
+}
+ext.runtime.onInstalled.addListener(handleInstalled);
 
 storage.get("registered",function(resp){
   if (resp.registered != true){
@@ -243,9 +249,25 @@ function handleMessageCheck(data){
         ext.windows.create({url: ext.extension.getURL("popup.html"),
                             width: WIDTH,
                             height: HEIGHT,
-                            type: "popup"});
+                            type: "popup"},function(window){openWindows.push({'windowID':window.id,'messageID':nextMessage.uid})});
     }
 }
+
+function closeWindow(messageID){
+ var index = -1;
+  for (var i=0; i < openWindows.length; i++) {
+       if (openWindows[i].messageID === messageID) {
+         index = i;
+         break;
+       }
+   }
+   if (index > -1){
+     ext.windows.remove(openWindows[index].windowID);
+     openWindows.splice(index,1);
+   }
+
+}
+
 
 /* quick check using the config.version to see if the Plugin config is still up to date */
 function checkIfConfigUptoDate(){
@@ -408,6 +430,7 @@ ext.runtime.onMessage.addListener(
                   break;
                 case "markShown":
                     MessageResponse({mark_shown:request.uid});
+
                     break;
                 case "getPopupMessage":                 //a popup will request the newest message
                     sendResponse(nextMessage);
@@ -432,13 +455,16 @@ ext.runtime.onMessage.addListener(
 
                 case "markRead":
                     MessageResponse({mark_read:request.uid});
+                    closeWindow(request.uid);
                     break;
                 case "markClicked":
                     MessageResponse({mark_clicked:request.uid});
+                    closeWindow(request.uid);
                     break;
                 case "emailThis":
                     sendAsEmail({message: request.uid,
                                  email: request.email});
+                    closeWindow(request.uid);
                     break;
                 case "putMessageonMessageStack":
                     for (var i=0; i<rawMessages.length; i++){
