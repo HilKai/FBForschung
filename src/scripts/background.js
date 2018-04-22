@@ -364,9 +364,9 @@ ext.runtime.onMessage.addListener(
           sendResponse({pluginStatus:plugin_active});
         }
         if (request.action == "updateIcon"){
-          var iconPath = "Icons/icon-16-inactive.png";
+          var iconPath = "images/icon-16-inactive.png";
           if ((request.facebookopen == 'true')&&(plugin_active == true)){
-            iconPath = "Icons/icon-16.png";
+            iconPath = "images/icon-16.png";
           }
           ext.browserAction.setIcon({
             path: iconPath,
