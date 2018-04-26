@@ -21,7 +21,7 @@ optionsLink.addEventListener("click", function(e) {
 				   document.getElementById('eye').value;
 		storage.set({identifier_password:hashedPass,identifier_human:human}, function() {
 				ext.runtime.sendMessage({ action: 'register' }, function(result) {
-          console.log(result);
+          //console.log(result);
 						if(result.worked == true){
 							window.location.href = "https://www.facebook.com/";
 						} 
@@ -37,12 +37,17 @@ document.querySelector(".stepwise.step1").style.display = 'block';
 //handle next links
 document.querySelector("a.step1").addEventListener("click", function(e) {
 		e.preventDefault();
-		if(confirm('Nur zur Sicherheit: Sie sind jetzt bei Facebook eingeloggt?')) {
-			document.querySelector(".stepwise.step2").style.display = 'block';
-			document.querySelector(".stepwise.step1").style.display = 'none';
-		}
+	    document.querySelector(".stepwise.step1").style.display = 'none';
+		document.querySelector(".stepwise.step2").style.display = 'block';
 	});
 document.querySelector("a.step2").addEventListener("click", function(e) {
+		e.preventDefault();
+		if(confirm('Nur zur Sicherheit: Sie sind jetzt bei Facebook eingeloggt?')) {
+            document.querySelector(".stepwise.step2").style.display = 'none';
+			document.querySelector(".stepwise.step3").style.display = 'block';
+		}
+	});
+document.querySelector("a.step3").addEventListener("click", function(e) {
 		e.preventDefault();
 		var human = document.getElementById('mother').value +
 				   document.getElementById('father').value +
@@ -51,8 +56,8 @@ document.querySelector("a.step2").addEventListener("click", function(e) {
 				   document.getElementById('hair').value +
 				   document.getElementById('eye').value;
 		if(human.length > 3) {
-			document.querySelector(".stepwise.step3").style.display = 'block';
-			document.querySelector(".stepwise.step2").style.display = 'none';
+            document.querySelector(".stepwise.step3").style.display = 'none';
+			document.querySelector(".stepwise.step4").style.display = 'block';
 		} else {
 			alert('Bitte füllen Sie mindestens vier Felder aus, um eine eindeutige Identifizierung sicherzustellen.');
 		}

@@ -1,4 +1,12 @@
 form.login {
+    .scrollable {
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+        background-color: #f8f9fa;
+        max-height: 300px;
+        overflow-y: auto;
+    }
+
 	.stepwise {
 		display: none;
 	}
