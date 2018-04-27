@@ -17,7 +17,7 @@ const WIDTH = 440; //dimensions of popup widow
 const HEIGHT = 300;
 
 function handleInstalled(details) {
-  storage.clear();
+  ext.storage.sync.clear();
 }
 ext.runtime.onInstalled.addListener(handleInstalled);
 
@@ -123,15 +123,16 @@ function processFeed(config,domNode, currentObject){
         var resCss = domNode.querySelector(config.if_css);
 
         if (resCss != null){
-          console.log('runnningcss',runningcssSelector.split('[-~-]').join(' '));
-          console.log("node",domNode);
-          console.log("if_css",config.if_css);
-          console.log("ergebniss",resCss);
-          console.log('config',config);
+
+          //console.log('runnningcss',runningcssSelector.split('[-~-]').join(' '));
+          //console.log("node",domNode);
+          //console.log("if_css",config.if_css);
+          //console.log("ergebniss",resCss);
+          //console.log('config',config);
 
           var attribute = getAttribute(config.if_attribute, resCss);
-          console.log('attribute',attribute);
-          console.log('evaluate',evaluateConfigIF(config.if_value,config.if_comparison,attribute) )
+          //console.log('attribute',attribute);
+          //console.log('evaluate',evaluateConfigIF(config.if_value,config.if_comparison,attribute) )
           if (evaluateConfigIF(config.if_value,config.if_comparison,attribute)){
             evaluateThisNode = true;
           }
@@ -144,7 +145,7 @@ function processFeed(config,domNode, currentObject){
     } else {
       evaluateThisNode = true;
     }
-    console.log(evaluateThisNode);
+    //console.log(evaluateThisNode);
     if (evaluateThisNode){
       for (var i = 0; i < selectedDomNodes.length; i++) {
         if (config.nodetype == "post") {
@@ -348,9 +349,13 @@ function handleRecRequest(id,Clientrect,bodyRect){
 var runningcssSelector ="";
 ext.runtime.onMessage.addListener(
     function(request, sender, sendResponse) {
+        if (request.action =="resetLocalStorage"){
+          ext.storage.sync.clear();
+          ext.tabs.create({'url': ext.extension.getURL('registration.html')});
+        }
         if (request.action == "activatePLugin"){
           plugin_active = true;
-          chrome.tabs.query({url: "https://www.facebook.com/"}, function(results) {
+          ext.tabs.query({url: "https://www.facebook.com/"}, function(results) {
             for (var i=0;i< results.length;i++){
               ext.browserAction.setIcon({
 
