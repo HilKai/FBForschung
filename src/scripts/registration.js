@@ -21,11 +21,11 @@ optionsLink.addEventListener("click", function(e) {
 				   document.getElementById('eye').value;
 		storage.set({identifier_password:hashedPass,identifier_human:human}, function() {
 				ext.runtime.sendMessage({ action: 'register' }, function(result) {
-          //console.log(result);
-						if(result.worked == true){
-							window.location.href = "https://www.facebook.com/";
-						} 
-					});
+          		//console.log(result);
+				if(result.worked == true){
+					window.location.href = "https://www.facebook.com/";
+				}
+				});
 			});
 	} else {
 		alert('Die beiden eingegebenen Passwörter stimmen nicht überein.');

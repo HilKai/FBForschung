@@ -13,23 +13,33 @@
     <title>FBforschung: Einstellungen</title>
 </head>
 <body>
-    <div class="container-fluid">
-        <div class="row">
-            <div class="col-2">
-                <img src="images/icon-48.png" alt="Icon FB-Forschung" />
-            </div>
-            <div class="col-10">
-                <h2>FBforschung.de</h2>
-                <p id ="PluginVersion" class="text-muted">Plugin-Version: ###</p>
-            </div>
-        </div>
-        <h3>Test-Konfiguration</h3>
-        <p>
-            <input id="devConfigCheck" type="checkbox" >
-            Zu Entwicklungs- und Testzwecken kann diese Option aktiviert werden, um statt der derzeitigen Live-Konfiguration die aktuelle Entwicklungs-Konfiguration vom Server zu beziehen und zu verwenden.
-            <a id="resetBtn" class="btn btn-danger" href="#" role="button">Neu registrieren und alle lokal gespeicherten Einträge löschen.</a>
-        </p>
-    </div>
+    <dl class="container-fluid">
+        <dt>Untersuchungsserver</dt>
+        <dd><p><a href="https://fbforschung.de">https://fbforschung.de</a></p></dd>
+
+        <dt>Plugin-Version</dt>
+        <dd><p id="PluginVersion"></p></dd>
+
+        <dt>Konfigurationsversion</dt>
+        <dd>
+            <p id="ConfigVersion"></p>
+            <a id="configBtn" class="btn btn-link btn-sm" href="#" role="button">Konfiguration neu laden</a>
+        </dd>
+
+        <dt>Test-Konfiguration</dt>
+        <dd>
+            <label>
+                <input id="devConfigCheck" type="checkbox" />
+                Zu Entwicklungs- und Testzwecken kann diese Option aktiviert werden, um statt der derzeitigen Live-Konfiguration die aktuelle Entwicklungs-Konfiguration vom Server zu beziehen und zu verwenden.
+            </label>
+        </dd>
+
+        <dt>EingeloggteR NutzerIn</dt>
+        <dd>
+            <p id="HumanID"></p>
+            <a id="resetBtn" class="btn btn-danger btn-sm" href="#" role="button">abmelden und neu registrieren</a>
+        </dd>
+    </dl>
     <script src="scripts/options.js"></script>
 </body>
 </html>
