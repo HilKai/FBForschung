@@ -10,6 +10,8 @@ ext.runtime.sendMessage({action:"getOption"}, function(response) {
     document.getElementById("HumanID").innerHTML = response.identifier_human;
     if(response.pluginActive) {
         document.getElementById("PluginVersion").innerHTML = response.plugin;
+    } else {
+        document.getElementById("PluginVersion").innerHTML = response.plugin + ' (inaktiv)';
     }
     document.getElementById("ConfigVersion").innerHTML = response.version;
     document.getElementById("devConfigCheck").checked = response.isdevConfig;

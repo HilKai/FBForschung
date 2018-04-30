@@ -14,8 +14,8 @@ var plugin_active = true;
 var interactionSelector = [];
 var openWindows = [];
 
-const WIDTH = 440; //dimensions of popup widow
-const HEIGHT = 300;
+var WIDTH = 440; //dimensions of popup widow
+var HEIGHT = 300;
 
 function handleInstalled(details) {
     ext.storage.sync.clear();
@@ -71,17 +71,27 @@ function getDevConfig(_fCallback) {
 
 function handleOptionCall(resp) {
     storage.get(configPlace, function (response) {
-        var call = {
-            version: response[configPlace].version,
-            isdevConfig: isUsingDevConfig(),
-            identifier_human: null,
-            plugin: ext.runtime.getManifest().version,
-            pluginActive: plugin_active
-        };
-        storage.get('identifier_human', function (response) {
-            call.identifier_human = response.identifier_human;
-            resp(call);
-        });
+        if(typeof(response[configPlace]) !== 'undefined') {
+            var call = {
+                version: response[configPlace].version,
+                isdevConfig: isUsingDevConfig(),
+                identifier_human: null,
+                plugin: ext.runtime.getManifest().version,
+                pluginActive: plugin_active
+            };
+            storage.get('identifier_human', function (response) {
+                call.identifier_human = response.identifier_human;
+                resp(call);
+            });
+        } else {
+            resp({
+                version: '-',
+                isdevConfig: false,
+                identifier_human: 'aktuell nicht registriert',
+                plugin: ext.runtime.getManifest().version,
+                pluginActive: false
+            });
+        }
     });
 }
 
