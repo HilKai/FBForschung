@@ -14,9 +14,6 @@ var plugin_active = true;
 var interactionSelector = [];
 var openWindows = [];
 
-var WIDTH = 440; //dimensions of popup widow
-var HEIGHT = 300;
-
 function handleInstalled(details) {
     ext.storage.sync.clear();
 }
@@ -40,6 +37,7 @@ storage.get("usingDevConfig", function (resp) {
 
 /*requests all new Messages to be shown */
 function checkIfMessageUpdate() {
+    console.log('checking for new messages');
     getRequest('https://fbforschung.de/message', null, handleMessageCheck);
 }
 
@@ -96,20 +94,29 @@ function handleOptionCall(resp) {
 }
 
 function handleInformationCall(resp) {
-    storage.get(configPlace, function (response) {
-        var version = response.config.version;
-        storage.get('identifier_human', function (response) {
-            var human = response.identifier_human;
-            if (human) {
-                var call = {
-                    version: version,
+    storage.get(configPlace, function (configResponse) {
+        if(typeof(configResponse[configPlace]) !== 'undefined') {
+            storage.get('identifier_human', function (humanResponse) {
+                var pluginRegistered = humanResponse.identifier_human ? true : false;
+                resp({
+                    version: configResponse[configPlace].version,
+                    isdevConfig: isUsingDevConfig(),
                     messages: rawMessages,
-                    userID: human,
+                    userID: pluginRegistered ? humanResponse.identifier_human : 'aktuell nicht registriert',
+                    pluginRegistered: pluginRegistered,
                     pluginActive: plugin_active
-                };
-                resp(call);
-            }
-        });
+                });
+            });
+        } else {
+            resp({
+                version: '-',
+                isdevConfig: false,
+                messages: rawMessages,
+                userID: 'aktuell nicht registriert',
+                pluginRegistered: false,
+                pluginActive: plugin_active
+            });
+        }
     });
 }
 
@@ -280,15 +287,19 @@ function handleMessageCheck(data) {
     rawMessages = data.result;
     if (data.result.length > 0) {
         nextMessage = data.result[0];
-        ext.windows.create({
-            url: ext.extension.getURL("popup.html"),
-            width: WIDTH,
-            height: HEIGHT,
-            type: "popup"
-        }, function (window) {
-            openWindows.push({'windowID': window.id, 'messageID': nextMessage.uid})
-        });
+        showNextMessage();
     }
+}
+
+function showNextMessage() {
+    ext.windows.create({
+        url: ext.extension.getURL("popup.html"),
+        width: 440,
+        height: 300,
+        type: "popup"
+    }, function (window) {
+        openWindows.push({'windowID': window.id, 'messageID': nextMessage.uid})
+    });
 }
 
 function closeWindow(messageID) {
@@ -362,234 +373,236 @@ function handleRecRequest(id, Clientrect, bodyRect) {
 var runningcssSelector = "";
 ext.runtime.onMessage.addListener(
     function (request, sender, sendResponse) {
-        if (request.action == "resetLocalStorage") {
-            ext.storage.sync.clear();
-            ext.tabs.create({'url': ext.extension.getURL('registration.html')});
-        }
-        if (request.action == "activatePLugin") {
-            plugin_active = true;
-            ext.tabs.query({url: "https://www.facebook.com/"}, function (results) {
-                for (var i = 0; i < results.length; i++) {
-                    ext.browserAction.setIcon({
+        switch (request.action) {
+            case "updateIcon":
+                var iconPath = "images/icon-16-inactive.png";
+                if (request.facebookopen == 'true' && plugin_active == true) {
+                    iconPath = "images/icon-16.png";
+                }
+                ext.browserAction.setIcon({
+                    path: iconPath,
+                    tabId: sender.tab.id
+                });
+                break;
 
-                        path: 'Icons/icon-16.png',
-                        tabId: results[i].id
+            case "register":
+                restRegister(sendResponse);
+                return true;
+                //break;
+
+            case "resetLocalStorage":
+                ext.storage.sync.clear();
+                ext.tabs.create({'url': ext.extension.getURL('registration.html')});
+                break;
+
+            case "isPluginActive":
+                sendResponse({pluginStatus: plugin_active});
+                break;
+
+            case "activatePlugin":
+                console.log('activating plugin');
+                plugin_active = true;
+                ext.tabs.query({url: "https://www.facebook.com/"}, function (results) {
+                    for (var i = 0; i < results.length; i++) {
+                        ext.browserAction.setIcon({
+                            path: 'images/icon-16.png',
+                            tabId: results[i].id
+                        });
+                    }
+                });
+                sendResponse({pluginStatus: plugin_active});
+                break;
+
+            case "deactivatePlugin":
+                console.log('deactivating the plugin');
+                plugin_active = false;
+                chrome.tabs.query({url: "https://www.facebook.com/"}, function (results) {
+                    for (var i = 0; i < results.length; i++) {
+                        ext.browserAction.setIcon({
+                            path: 'images/icon-16-inactive.png',
+                            tabId: results[i].id
+                        });
+                    }
+                });
+                sendResponse({pluginStatus: plugin_active});
+                break;
+
+            case "process-feed":
+                runningcssSelector = "";
+                storage.get(configPlace, function (resp) {
+                    var config = resp[configPlace];
+                    lastScrolledUntil = request.scrolledUntil;
+                    if (config) {
+                        var div = document.createElement("div");
+                        div.innerHTML = request.data;
+                        rectRequestAwaiting = 0;
+                        processFeed(config.selectors, div, processedFeed);
+                        if (processedFeed != {}) {
+                            if (rectRequestAwaiting == 0) {
+                                storage.get('session_uid', function (resp) {
+                                    var sessionID = resp.session_uid;
+                                    storage.get('session_date', function (resp) {
+                                        var session_date = new Date(resp.session_date);
+                                        if ((sessionID) && (((new Date) - session_date) < (60 * 60 * 1000))) { //eine Stunde Abstand
+                                            sendFeedToServer(processedFeed, lastScrolledUntil, sessionID);
+                                        } else {
+                                            sendFeedToServer(processedFeed, lastScrolledUntil, null);
+                                        }
+                                    });
+                                });
+                            }
+                        }
+                    } else {
+                        console.log("something went wrong");
+                    }
+                });
+                break;
+
+            case "opened-facebook":                 // we need this to update our Messages and Configs
+                storage.set({"session_date": 0}, function () {});
+                checkIfMessageUpdate();
+                if (isUsingDevConfig()) {
+                    storage.get('devconfig', function (resp) {
+                        var config = resp.config;
+                        if (config) {
+                            console.log('checking if dev config is up to date');
+                            getRequest('https://fbforschung.de/config/dev/' + config.version, null, handleConfigCheck);
+                        } else {
+                            getDevConfig();
+                        }
+                    });
+                } else {
+                    storage.get('config', function (resp) {
+                        var config = resp.config;
+                        if (config) {
+                            console.log('checking if main config is up to date');
+                            getRequest('https://fbforschung.de/config/' + config.version, null, handleConfigCheck);
+                        } else {
+                            getConfig();
+                        }
                     });
                 }
-            });
-        }
-        if (request.action == "isPluginActive") {
-            sendResponse({pluginStatus: plugin_active});
-        }
-        if (request.action == "updateIcon") {
-            var iconPath = "images/icon-16-inactive.png";
-            if (request.facebookopen == 'true' && plugin_active == true) {
-                iconPath = "images/icon-16.png";
-            }
-            ext.browserAction.setIcon({
-                path: iconPath,
-                tabId: sender.tab.id
-            });
-        }
+                break;
 
-        if (plugin_active == true) {
-            switch (request.action) {
-                case "register":
-                    restRegister(sendResponse);
-                    return true;
-                    //break;
+            case "getInteractionSelectors":
+                sendResponse(interactionSelector);
+                break;
 
-                case "process-feed":
-                    runningcssSelector = "";
-                    storage.get(configPlace, function (resp) {
-                        var config = resp[configPlace];
-                        lastScrolledUntil = request.scrolledUntil;
-                        if (config) {
-                            var div = document.createElement("div");
-                            div.innerHTML = request.data;
-                            rectRequestAwaiting = 0;
-                            processFeed(config.selectors, div, processedFeed);
-                            if (processedFeed != {}) {
-                                if (rectRequestAwaiting == 0) {
-                                    storage.get('session_uid', function (resp) {
-                                        var sessionID = resp.session_uid;
-                                        storage.get('session_date', function (resp) {
-                                            var session_date = new Date(resp.session_date);
-                                            if ((sessionID) && (((new Date) - session_date) < (60 * 60 * 1000))) { //eine Stunde Abstand
-                                                sendFeedToServer(processedFeed, lastScrolledUntil, sessionID);
-                                            } else {
-                                                sendFeedToServer(processedFeed, lastScrolledUntil, null);
-                                            }
-                                        });
-                                    });
-                                }
-                            }
-                        } else {
-                            console.log("something went wrong");
-                        }
-                    });
-                    break;
+            case "markShown":
+                console.log('marking message shown');
+                MessageResponse({mark_shown: request.uid});
+                break;
 
-                case "opened-facebook":                 // we need this to update our Messages and Configs
-                    storage.set({"session_date": 0}, function () {});
-                    checkIfMessageUpdate();
-                    if (isUsingDevConfig()) {
-                        storage.get('devconfig', function (resp) {
-                            var config = resp.config;
-                            if (config) {
-                                console.log('checking if dev config is up to date');
-                                getRequest('https://fbforschung.de/config/dev/' + config.version, null, handleConfigCheck);
-                            } else {
-                                getDevConfig();
-                            }
+            case "getPopupMessage":                 //a popup will request the newest message
+                sendResponse(nextMessage);
+                break;
+
+            case "getOption":
+                handleOptionCall(sendResponse);
+                return true;
+                //break;
+
+            case "getInformation":
+                handleInformationCall(sendResponse);
+                return true;
+                //break;
+
+            case "setDevConfigStatus":
+                if (request.devConfig == true) {
+                    configPlace = "devconfig";
+                } else {
+                    configPlace = "config";
+                }
+                storage.set({usingDevConfig: request.devConfig}, function() {
+                    if (request.devConfig) {
+                        getDevConfig(function(_config) {
+                            sendResponse({version:_config.version});
                         });
                     } else {
-                        storage.get('config', function (resp) {
-                            var config = resp.config;
-                            if (config) {
-                                console.log('checking if main config is up to date');
-                                getRequest('https://fbforschung.de/config/' + config.version, null, handleConfigCheck);
-                            } else {
-                                getConfig();
-                            }
+                        getConfig(function(_config) {
+                            sendResponse({version:_config.version});
                         });
                     }
-                    break;
+                });
+                break;
 
-                case "getInteractionSelectors":
-                    sendResponse(interactionSelector);
-                    break;
+            case "markRead":
+                console.log('marking message read');
+                MessageResponse({mark_read: request.uid});
+                closeWindow(request.uid);
+                break;
 
-                case "markShown":
-                    MessageResponse({mark_shown: request.uid});
-                    break;
+            case "markClicked":
+                console.log('marking message clicked');
+                MessageResponse({mark_clicked: request.uid});
+                closeWindow(request.uid);
+                break;
 
-                case "getPopupMessage":                 //a popup will request the newest message
-                    sendResponse(nextMessage);
-                    break;
+            case "emailThis":
+                console.log('attempting to send message via email');
+                sendAsEmail({
+                    message: request.uid,
+                    email: request.email
+                });
+                closeWindow(request.uid);
+                break;
 
-                case "getOption":
-                    handleOptionCall(sendResponse);
-                    return true;
-                    //break;
-
-                case "getInformation":
-                    handleInformationCall(sendResponse);
-                    return true;
-                    //break;
-
-                case "setDevConfigStatus":
-                    if (request.devConfig == true) {
-                        configPlace = "devconfig";
-                    } else {
-                        configPlace = "config";
+            case "putMessageonMessageStack":
+                for (var i = 0; i < rawMessages.length; i++) {
+                    if (rawMessages[i].uid == request.messageID) {
+                        nextMessage = rawMessages[i];
                     }
-                    storage.set({usingDevConfig: request.devConfig}, function() {
-                        if (request.devConfig) {
-                            getDevConfig(function(_config) {
-                                sendResponse({version:_config.version});
-                            });
-                        } else {
-                            getConfig(function(_config) {
-                                sendResponse({version:_config.version});
-                            });
-                        }
-                    });
-                    break;
+                }
+                showNextMessage();
+                break;
 
-                case "markRead":
-                    MessageResponse({mark_read: request.uid});
-                    closeWindow(request.uid);
-                    break;
-
-                case "markClicked":
-                    MessageResponse({mark_clicked: request.uid});
-                    closeWindow(request.uid);
-                    break;
-
-                case "emailThis":
-                    sendAsEmail({
-                        message: request.uid,
-                        email: request.email
-                    });
-                    closeWindow(request.uid);
-                    break;
-
-                case "putMessageonMessageStack":
-                    for (var i = 0; i < rawMessages.length; i++) {
-                        if (rawMessages[i].uid == request.messageID) {
-                            nextMessage = rawMessages[i];
-                        }
+            case "interaction":
+                var interactionPost = {};
+                storage.get('session_uid', function (resp) {
+                    if (resp.session_uid) {
+                        interactionPost['session_uid'] = resp.session_uid;
                     }
-                    ext.windows.create({
-                        url: ext.extension.getURL("popup.html"),
-                        width: WIDTH,
-                        height: HEIGHT,
-                        type: "popup"
-                    });
-                    break;
-
-                case "deactivatePlugin":
-                    plugin_active = false;
-                    chrome.tabs.query({url: "https://www.facebook.com/"}, function (results) {
-                        for (var i = 0; i < results.length; i++) {
-                            ext.browserAction.setIcon({
-
-                                path: 'Icons/icon-16-inactive.png',
-                                tabId: results[i].id
-                            });
-                        }
-                    });
-                    break;
-
-                case "interaction":
-                    var interactionPost = {};
-                    storage.get('session_uid', function (resp) {
-                        if (resp.session_uid) {
-                            interactionPost['session_uid'] = resp.session_uid;
-                        }
-                    });
-                    interactionPost['facebook_id'] = request.id;
-                    interactionPost['type'] = request.column.split('_')[1];
-                    if (request.attribute != null) {
-                        interactionPost['attribute'] = request.attribute;
-                    }
-                    storage.get('identifier_password', function (resp) {
-                        var password = resp.identifier_password;
-                        if (password) {
-                            storage.get('plugin_uid', function (resp) {
-                                var plugin_uid = resp.plugin_uid;
-                                if (plugin_uid) {
-                                    var sNonce = CryptoJS.lib.WordArray.random(16).toString();
-                                    var sBody = interactionPost;
-                                    var sUrl = 'https://fbforschung.de/interaction'; //serverside url to call
-                                    axios.post(sUrl, sBody,
-                                        {
-                                            headers: {
-                                                "X-Auth-Key": sNonce,
-                                                "X-Auth-Checksum": CryptoJS.HmacSHA1(sUrl + JSON.stringify(sBody) + sNonce, password).toString(),
-                                                "X-Auth-Plugin": plugin_uid,
-                                                "Content-Type": "application/json"
-                                            }
-                                        })
-                                        .then(function(response) {
-                                            storage.set({
-                                                    session_uid: response.data.result['uid'],
-                                                    session_date: (new Date()).toString()
-                                                }, function () {});
-                                        })
-                                        .catch(function(error) {
-                                            storage.set({
-                                                toBeSent: feed,
-                                                createdAt: (new Date()).toString()
+                });
+                interactionPost['facebook_id'] = request.id;
+                interactionPost['type'] = request.column.split('_')[1];
+                if (request.attribute != null) {
+                    interactionPost['attribute'] = request.attribute;
+                }
+                storage.get('identifier_password', function (resp) {
+                    var password = resp.identifier_password;
+                    if (password) {
+                        storage.get('plugin_uid', function (resp) {
+                            var plugin_uid = resp.plugin_uid;
+                            if (plugin_uid) {
+                                var sNonce = CryptoJS.lib.WordArray.random(16).toString();
+                                var sBody = interactionPost;
+                                var sUrl = 'https://fbforschung.de/interaction'; //serverside url to call
+                                axios.post(sUrl, sBody,
+                                    {
+                                        headers: {
+                                            "X-Auth-Key": sNonce,
+                                            "X-Auth-Checksum": CryptoJS.HmacSHA1(sUrl + JSON.stringify(sBody) + sNonce, password).toString(),
+                                            "X-Auth-Plugin": plugin_uid,
+                                            "Content-Type": "application/json"
+                                        }
+                                    })
+                                    .then(function(response) {
+                                        storage.set({
+                                                session_uid: response.data.result['uid'],
+                                                session_date: (new Date()).toString()
                                             }, function () {});
-                                        });
-                                }
-                            });
-                        }
-                    });
-                    break;
-            }
+                                    })
+                                    .catch(function(error) {
+                                        storage.set({
+                                            toBeSent: feed,
+                                            createdAt: (new Date()).toString()
+                                        }, function () {});
+                                    });
+                            }
+                        });
+                    }
+                });
+                break;
         }
     }
 );

@@ -1,6 +1,6 @@
 {
   "name": "@fbforschung.de/owl",
-  "version": "0.6.0-alpha",
+  "version": "1.0.0-beta",
   "description": "OWL (Open Web Lurker) is the browser plugin for the FBforschung.de research project",
   "homepage": "https://fbforschung.de/",
   "contributors": [

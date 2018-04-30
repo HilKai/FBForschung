@@ -69,7 +69,8 @@ gulp.task('js', () => {
 });
 
 gulp.task('styles', () => {
-  return gulp.src('src/styles/**/*.scss')
+  //return gulp.src('src/styles/**/*.scss')
+  return gulp.src(['src/styles/**/*.scss', 'node_modules/bootstrap/scss/bootstrap.scss'])
     .pipe($.plumber())
     .pipe($.sass.sync({
       outputStyle: 'expanded',
