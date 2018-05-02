@@ -3,23 +3,22 @@ import storage from "./utils/storage";
 
 var axios = require('axios');
 var CryptoJS = require("crypto-js");
-var configTrees = [];
-var nextMessage;
-var rawMessages;
-var configPlace = "config";
-var processedFeed = {};
-var lastScrolledUntil = 0;
-var plugin_active = true;
-var interactionSelector = [];
-var openWindows = [];
-var feedToServerQueue = [];
-var feedQueueInProgress = false;
+var nextMessage,
+    rawMessages,
+    configPlace = "config",
+    processedFeed = {},
+    lastScrolledUntil = 0,
+    plugin_active = true,
+    interactionSelector = [],
+    openWindows = [],
+    feedToServerQueue = [],
+    feedQueueInProgress = false,
+    postCssSelector = "",
+    runningcssSelector = "";
 
-function handleInstalled(details) {
+ext.runtime.onInstalled.addListener(function() {
     ext.storage.sync.clear();
-}
-
-ext.runtime.onInstalled.addListener(handleInstalled);
+});
 
 storage.get("registered", function (resp) {
     if (resp.registered != true) {
@@ -36,16 +35,26 @@ storage.get("usingDevConfig", function (resp) {
 });
 
 
-/*requests all new Messages to be shown */
+/**
+ * checks for new messages from the server
+ */
 function checkIfMessageUpdate() {
     console.log('checking for new messages');
     getRequest('https://fbforschung.de/message', null, handleMessageCheck);
 }
 
+/**
+ * simple check on whether a the currently used config is the DEV config
+ * @returns {boolean}
+ */
 function isUsingDevConfig() {
     return (configPlace == "devconfig");
 }
 
+/**
+ * checks for the main config from the server
+ * @param _fCallback    function to call after finishing
+ */
 function getConfig(_fCallback) {
     console.log('fetching current main config');
     getRequest("https://fbforschung.de/config", '', function(response) {
@@ -57,6 +66,10 @@ function getConfig(_fCallback) {
     });
 }
 
+/**
+ * checks for the DEV config from the server
+ * @param _fCallback    function to call after finishing
+ */
 function getDevConfig(_fCallback) {
     console.log('fetching current dev config');
     getRequest("https://fbforschung.de/config/dev", '', function(response) {
@@ -68,6 +81,10 @@ function getDevConfig(_fCallback) {
     });
 }
 
+/**
+ * responds to the plugin's option request
+ * @param resp  object to push response to
+ */
 function handleOptionCall(resp) {
     storage.get(configPlace, function (response) {
         if(typeof(response[configPlace]) !== 'undefined') {
@@ -94,6 +111,10 @@ function handleOptionCall(resp) {
     });
 }
 
+/**
+ * responds to the plugin's information request (the popup without messages)
+ * @param resp  object to push response to
+ */
 function handleInformationCall(resp) {
     storage.get(configPlace, function (configResponse) {
         if(typeof(configResponse[configPlace]) !== 'undefined') {
@@ -121,14 +142,15 @@ function handleInformationCall(resp) {
     });
 }
 
-/*
- * Processes the user-feed
- * @Param config - config used to evaluate the feed
- * @Param domNodes - user Feed from Facebook
- * @Param currentObject - object in which the Session Package will be stored
- * this will be recursevly called, reducing the config and data in the Process
-*/
-var postCssSelector = "";
+/**
+ * processes a complete DOM feed
+ * @param config    current config object to use
+ * @param domNode   full DOM
+ * @param currentObject recursive necessity
+ * @param domRects  rect measures for position calculation
+ * @param tabID ID of the contentscript's sender
+ * @returns {*}
+ */
 function processFeed(config, domNode, currentObject, domRects, tabID) {
     var selectors = config.selectors;
     var selectedDomNodes = [domNode];
@@ -167,9 +189,7 @@ function processFeed(config, domNode, currentObject, domRects, tabID) {
                 if (evaluateConfigIF(config.if_value, config.if_comparison, attribute)) {
                     evaluateThisNode = true;
                 }
-            }// else {
-            //    evaluateThisNode = true;
-            //}
+            }
         } else {
             evaluateThisNode = true;
         }
@@ -188,8 +208,6 @@ function processFeed(config, domNode, currentObject, domRects, tabID) {
                     if(typeof(selectedDomNodes[i].id) !== 'undefined' && typeof(domRects[selectedDomNodes[i].id]) !== 'undefined') {
                         post['position_onscreen'] = domRects[selectedDomNodes[i].id].top - domRects['body'].top;
                     }
-                    //selectedDomNodes[i].id + "top";
-                    //sendRecRequest(selectedDomNodes[i].id, tabID);
                     currentObject.posts.push(post);
                 }
             } else {
@@ -204,11 +222,12 @@ function processFeed(config, domNode, currentObject, domRects, tabID) {
     return currentObject;
 }
 
-
-/* forwards a Message as E-Mail
- * @param (js-object) body - body which specifies messageID and E-Mail Adress
+/**
+ * sends a given email object to the server to be sent via email
+ * @param body  textual body (stringified JSON)
  */
 function sendAsEmail(body) {
+    console.log('attempting to send message via email');
     storage.get('plugin_uid', function (resp) {
         var plugin_uid = resp.plugin_uid;
         if (plugin_uid) {
@@ -243,10 +262,11 @@ function sendAsEmail(body) {
 }
 
 
-/* sends a Message Response such as shown, viewed, clicked
- @param (js-object) body  - specifies action and message ID
-*/
-function MessageResponse(body) {
+/**
+ * sends a message response (read, clicked ...) to the server
+ * @param body string body to send (stringified JSON)
+ */
+function sendMessageResponse(body) {
     storage.get('plugin_uid', function (resp) {
         var plugin_uid = resp.plugin_uid;
         if (plugin_uid) {
@@ -283,7 +303,11 @@ function MessageResponse(body) {
     });
 }
 
-/* takes the first Message to be shown and creates the popup for it */
+/**
+ * whenever a sendMessageResponse returns, new messages might be included;
+ * these are handled here
+ * @param data
+ */
 function handleMessageCheck(data) {
     rawMessages = data.result;
     if (data.result.length > 0) {
@@ -292,6 +316,9 @@ function handleMessageCheck(data) {
     }
 }
 
+/**
+ * display a (the next) message from the queue
+ */
 function showNextMessage() {
     ext.windows.create({
         url: ext.extension.getURL("popup.html"),
@@ -303,6 +330,10 @@ function showNextMessage() {
     });
 }
 
+/**
+ * close a message window
+ * @param messageID
+ */
 function closeWindow(messageID) {
     var index = -1;
     for (var i = 0; i < openWindows.length; i++) {
@@ -317,6 +348,10 @@ function closeWindow(messageID) {
     }
 }
 
+/**
+ * handle server response for a config request
+ * @param _configResponse
+ */
 function handleConfigCheck(_configResponse) {
     if (_configResponse.is_latest_version == false) {
         if (isUsingDevConfig()) {
@@ -328,8 +363,10 @@ function handleConfigCheck(_configResponse) {
 }
 
 
-/* Main Messaging centrum of the Extension, all requests get directed to here */
-var runningcssSelector = "";
+/**
+ * MAIN function here
+ * responds to the plugin's contentscript requests
+ */
 ext.runtime.onMessage.addListener(
     function (request, sender, sendResponse) {
         switch (request.action) {
@@ -437,7 +474,7 @@ ext.runtime.onMessage.addListener(
 
             case "markShown":
                 console.log('marking message shown');
-                MessageResponse({mark_shown: request.uid});
+                sendMessageResponse({mark_shown: request.uid});
                 break;
 
             case "getPopupMessage":                 //a popup will request the newest message
@@ -476,18 +513,17 @@ ext.runtime.onMessage.addListener(
 
             case "markRead":
                 console.log('marking message read');
-                MessageResponse({mark_read: request.uid});
+                sendMessageResponse({mark_read: request.uid});
                 closeWindow(request.uid);
                 break;
 
             case "markClicked":
                 console.log('marking message clicked');
-                MessageResponse({mark_clicked: request.uid});
+                sendMessageResponse({mark_clicked: request.uid});
                 closeWindow(request.uid);
                 break;
 
             case "emailThis":
-                console.log('attempting to send message via email');
                 sendAsEmail({
                     message: request.uid,
                     email: request.email
@@ -554,16 +590,19 @@ ext.runtime.onMessage.addListener(
     }
 );
 
-/* sends the Feed to the server
- * @param (js-object) feed : the feed containing the post, structured using the config
- * @param (int) scrolledUntil : specifies how deep the user scrolled into his feed
- * @param (int) sessionID : session ID of the last session used, can be null if this is the first post today/in the last hour
-*/
+/**
+ * add a (newly) collected DOM feed to the queue to be sent to the server
+ * @param feed  the feed that has been collected (within processFeed(...))
+ * @param scrolledUntil amount of pixels the user has scrolled until
+ */
 function sendFeedToServer(feed, scrolledUntil) {
     feedToServerQueue.push({feed: feed, scrolledUntil: scrolledUntil});
     processFeedQueue();
 }
 
+/**
+ * internal feed-to-server-queue handling function
+ */
 function processFeedQueue() {
     if(!feedQueueInProgress && feedToServerQueue.length > 0) {
         feedQueueInProgress = true;
@@ -632,7 +671,11 @@ function processFeedQueue() {
     }
 }
 
-
+/**
+ * simple check if an object is empty
+ * @param obj
+ * @returns {boolean}
+ */
 function isEmpty(obj) {
     for (var key in obj) {
         if (obj.hasOwnProperty(key)) {
@@ -642,7 +685,13 @@ function isEmpty(obj) {
     return true;
 }
 
-
+/**
+ * for a given IF comparison (as specified on the server), check if this is true
+ * @param ifValue
+ * @param comparison
+ * @param attribute
+ * @returns {boolean}
+ */
 function evaluateConfigIF(ifValue, comparison, attribute) {
     switch (comparison) {
         case 'equal':
@@ -680,6 +729,12 @@ function evaluateConfigIF(ifValue, comparison, attribute) {
     }
 }
 
+/**
+ * return the correct attribute from a DOM node
+ * @param attribute
+ * @param domNode
+ * @returns {*}
+ */
 function getAttribute(attribute, domNode) {
     if (attribute.startsWith("attr-")) {
         return domNode.getAttribute(attribute.substr(5, attribute.length - 5));
@@ -708,8 +763,13 @@ function getAttribute(attribute, domNode) {
     }
 }
 
-
-/* handels the Action for a given config node and domNode and appends it to the currentObject */
+/**
+ *
+ * @param config
+ * @param domNode
+ * @param currentObject
+ * @param domRects
+ */
 function handleActions(config, domNode, currentObject, domRects) {
     if (config.attribute.startsWith("attr-")) {
         currentObject[config.column] = domNode.getAttribute(config.attribute.substr(5, config.attribute.length - 5));
@@ -782,9 +842,8 @@ function handleActions(config, domNode, currentObject, domRects) {
 }
 
 /**
- * Calls the register function and registers the Plugin.
- *
- *
+ * initially register a plugin, as being requested from the plugin's registration JS
+ * @param responseFunction  function to call to return
  */
 function restRegister(responseFunction) {
     storage.get('identifier_password', function (resp) {
@@ -843,11 +902,11 @@ function restRegister(responseFunction) {
     });
 }
 
-/** Performs a restGet where PluginID and Password get loaded form Storage
- *
- * @param {string} _sUrl Url to call
- * @param {string} _sBody HTTP body to send
- * @param {function} _fCallback callback function with (at least) one JS object parameter
+/**
+ * set up a GET request with identifying information
+ * @param _sUrl
+ * @param _sBody
+ * @param _fCallback
  */
 function getRequest(_sUrl, _sBody, _fCallback) {
     storage.get('plugin_uid', function (resp) {
@@ -863,15 +922,13 @@ function getRequest(_sUrl, _sBody, _fCallback) {
     });
 }
 
-
 /**
- * Retrieve data from the REST API using a GET request.
- *
- * @param {int}  _nPlugin   plugin UID for authentication
- * @param {string}   _sUrl      full URL to call
- * @param {string}   _sPassword currently logged in user's password
- * @param {function} _fCallback callback function with (at least) one JS object parameter
- * @param {string} _sBody HTTP body to send
+ * actually send a GET request to the server
+ * @param _nPlugin
+ * @param _sUrl
+ * @param _sPassword
+ * @param _fCallback
+ * @param _sBody
  */
 function restGET(_nPlugin, _sUrl, _sPassword, _fCallback, _sBody) {
     var strBody = "";

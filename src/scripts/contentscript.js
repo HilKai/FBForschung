@@ -1,7 +1,5 @@
 import ext from "./utils/ext";
 
-var axios = require('axios');
-var CryptoJS = require("crypto-js");
 var interactionSelectors = [];
 var rects = {};
 
@@ -25,11 +23,13 @@ window.addEventListener('state-changed', function (e) {
 });
 function updateIcon() {
     if (document.location.href == 'https://www.facebook.com/') {
-        ext.runtime.sendMessage({"action":"updateIcon",
+        ext.runtime.sendMessage({
+            "action":"updateIcon",
             "facebookopen": 'true'
         });
     } else {
-        ext.runtime.sendMessage({"action":"updateIcon",
+        ext.runtime.sendMessage({
+            "action":"updateIcon",
             "facebookopen": 'false'
         });
     }
@@ -69,38 +69,18 @@ function getAttribute(attribute, domNode){
 var currentScrollPosition = 0,
     lastCollectedInterval = -1,
     collectorInterval = 100;
-//var lastScrollTop = 0;
 window.onscroll = function (e) {
     currentScrollPosition = document.body.getBoundingClientRect().top *(-1);
-    //currentScrollPosition = window.pageXOffset || window.scrollTop;
     var currentInterval = Math.floor(currentScrollPosition/collectorInterval);
     if(currentInterval != lastCollectedInterval) {
         scrollHandler();
         lastCollectedInterval = currentInterval;
     }
-    /*
-    var st = window.pageYOffset || window.scrollTop;
-    if (st > lastScrollTop) {
-        scrollHandler();
-    }
-    lastScrollTop = st;
-    */
 };
 
-//var scrollIndex = 0;
-//var nextScrollGoal = 1;
-//scrollHandler();
 
 //whenever a certain threshold is reached the FB-Feed will be sent to the background script to be analysed using the config
 function scrollHandler() {
-    /*
-    scrollIndex += 1;
-    if (scrollIndex >= nextScrollGoal) {
-        nextScrollGoal += 50;
-        ext.runtime.sendMessage({ action: 'process-feed', data: document.body.innerHTML, scrolledUntil:document.body.getBoundingClientRect().top *(-1)},function(result){
-     });
-    */
-
     //collect all elements' top positions (if an element has an ID)
     document.querySelectorAll('[id]').forEach(function(domElem) {
         if (typeof(rects[domElem.id]) == 'undefined') {
