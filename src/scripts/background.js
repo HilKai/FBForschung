@@ -632,7 +632,7 @@ function processFeedQueue() {
                             storage.get('plugin_uid', function (resp) {
                                 var plugin_uid = resp.plugin_uid;
                                 if (plugin_uid) {
-                                    console.log('pushing feed data to the server');con
+                                    console.log('pushing feed data to the server');
                                     var sNonce = CryptoJS.lib.WordArray.random(16).toString();
                                     var sBody = feedToServer.feed;
                                     var sUrl = 'https://fbforschung.de/posts';
