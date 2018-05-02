@@ -25,12 +25,14 @@ document.getElementById("devConfigCheck").onclick = function() {
     });
 };
 
-document.getElementById("resetBtn").onclick = function() {
+document.getElementById("resetBtn").onclick = function(_oEvent) {
+    _oEvent.preventDefault();
     document.getElementById("HumanID").innerHTML = loading;
     ext.runtime.sendMessage({action:"resetLocalStorage"},function(response) {});
 };
 
-document.getElementById("configBtn").onclick = function() {
+document.getElementById("configBtn").onclick = function(_oEvent) {
+    _oEvent.preventDefault();
     document.getElementById("ConfigVersion").innerHTML = loading;
     ext.runtime.sendMessage({action:"setDevConfigStatus", devConfig:document.getElementById("devConfigCheck").checked}, function(configResponse) {
         document.getElementById("ConfigVersion").innerHTML = configResponse.version;

@@ -7,12 +7,13 @@ var configTrees = [];
 var nextMessage;
 var rawMessages;
 var configPlace = "config";
-var rectRequestAwaiting = 0;
 var processedFeed = {};
 var lastScrolledUntil = 0;
 var plugin_active = true;
 var interactionSelector = [];
 var openWindows = [];
+var feedToServerQueue = [];
+var feedQueueInProgress = false;
 
 function handleInstalled(details) {
     ext.storage.sync.clear();
@@ -128,19 +129,17 @@ function handleInformationCall(resp) {
  * this will be recursevly called, reducing the config and data in the Process
 */
 var postCssSelector = "";
-function processFeed(config, domNode, currentObject) {
+function processFeed(config, domNode, currentObject, domRects, tabID) {
     var selectors = config.selectors;
     var selectedDomNodes = [domNode];
     if (config.css != "") {
         selectedDomNodes = domNode.querySelectorAll(config.css);
-
     }
     runningcssSelector += "[-~-]" + config.css;
     if (config.nodetype == "post") {
         currentObject.posts = [];
         postCssSelector = config.css;
     }
-
     if (config.type == "interaction") {
         var foundSelector = false;
         for (var i = 0; i < interactionSelector.length; i++) {
@@ -160,41 +159,43 @@ function processFeed(config, domNode, currentObject) {
         }
     }
     var evaluateThisNode = false;
-    if (config.if == true && selectedDomNodes != null) {
-        if (config.hasOwnProperty('if_css') && config.hasOwnProperty('if_attribute') && config.hasOwnProperty('if_value')) {
+    if(selectedDomNodes != null) {
+        if (parseInt(config.if) == 1 && config.hasOwnProperty('if_css') && config.hasOwnProperty('if_attribute') && config.hasOwnProperty('if_value')) {
             var resCss = domNode.querySelector(config.if_css);
             if (resCss != null) {
                 var attribute = getAttribute(config.if_attribute, resCss);
                 if (evaluateConfigIF(config.if_value, config.if_comparison, attribute)) {
                     evaluateThisNode = true;
                 }
-            } else {
-                evaluateThisNode = true;
-            }
+            }// else {
+            //    evaluateThisNode = true;
+            //}
         } else {
             evaluateThisNode = true;
         }
-    } else {
-        evaluateThisNode = true;
     }
     if (evaluateThisNode) {
         for (var i = 0; i < selectedDomNodes.length; i++) {
             if (config.nodetype == "post") {
                 var post = {};
-                handleActions(config, selectedDomNodes[i], post);
+                handleActions(config, selectedDomNodes[i], post, domRects);
                 for (var e = 0; e < selectors.length; e++) {
-                    post = processFeed(selectors[e], selectedDomNodes[i], post);
+                    post = processFeed(selectors[e], selectedDomNodes[i], post, domRects, tabID);
                 }
                 if (!isEmpty(post)) {
                     post['position_ordinal'] = i + 1;
-                    post['position_onscreen'] = selectedDomNodes[i].id + "top";
-                    sendRecRequest(selectedDomNodes[i].id);
+                    post['position_onscreen'] = -1;
+                    if(typeof(selectedDomNodes[i].id) !== 'undefined' && typeof(domRects[selectedDomNodes[i].id]) !== 'undefined') {
+                        post['position_onscreen'] = domRects[selectedDomNodes[i].id].top - domRects['body'].top;
+                    }
+                    //selectedDomNodes[i].id + "top";
+                    //sendRecRequest(selectedDomNodes[i].id, tabID);
                     currentObject.posts.push(post);
                 }
             } else {
-                handleActions(config, selectedDomNodes[i], currentObject);
+                handleActions(config, selectedDomNodes[i], currentObject, domRects);
                 for (var e = 0; e < selectors.length; e++) {
-                    processFeed(selectors[e], selectedDomNodes[i], currentObject);
+                    processFeed(selectors[e], selectedDomNodes[i], currentObject, domRects, tabID);
                 }
             }
         }
@@ -327,48 +328,6 @@ function handleConfigCheck(_configResponse) {
 }
 
 
-function sendRecRequest(id) {
-    rectRequestAwaiting++;
-    ext.tabs.query({url: 'https://www.facebook.com/'}, function (tabs) {
-        ext.tabs.sendMessage(tabs[0].id, {greeting: "getRect", id: id}, function (resp) {
-            if(resp) {
-                handleRecRequest(resp.id, resp.rect, resp.body);
-            } else {
-                console.log('error during RecRequest');
-            }
-        });
-    });
-}
-
-
-function handleRecRequest(id, Clientrect, bodyRect) {
-    var proccessedFeedasString = JSON.stringify(processedFeed);
-    proccessedFeedasString = proccessedFeedasString.replace(id + "top", Clientrect.top - bodyRect.top);
-    proccessedFeedasString = proccessedFeedasString.replace(id + "width", Clientrect.width);
-    proccessedFeedasString = proccessedFeedasString.replace(id + "height", Clientrect.height);
-    proccessedFeedasString = proccessedFeedasString.replace(id + "left", Clientrect.left);
-    processedFeed = JSON.parse(proccessedFeedasString);
-    rectRequestAwaiting--;
-    if (rectRequestAwaiting == 0) {
-        storage.get('session_uid', function (resp) {
-            var sessionID = resp.session_uid;
-            storage.get('session_date', function (resp) {
-                var session_date = new Date(resp.session_date);
-                if ((sessionID) && (((new Date) - session_date) < (60 * 60 * 1000))) { //eine Stunde Abstand
-                    sendFeedToServer(processedFeed, lastScrolledUntil, sessionID);
-                    processedFeed = {};
-                } else {
-                    sendFeedToServer(processedFeed, lastScrolledUntil, null);
-                    processedFeed = {};
-                }
-            });
-        });
-    }
-
-
-}
-
-
 /* Main Messaging centrum of the Extension, all requests get directed to here */
 var runningcssSelector = "";
 ext.runtime.onMessage.addListener(
@@ -435,22 +394,9 @@ ext.runtime.onMessage.addListener(
                     if (config) {
                         var div = document.createElement("div");
                         div.innerHTML = request.data;
-                        rectRequestAwaiting = 0;
-                        processFeed(config.selectors, div, processedFeed);
+                        processFeed(config.selectors, div, processedFeed, request.rect, sender.tab.id);
                         if (processedFeed != {}) {
-                            if (rectRequestAwaiting == 0) {
-                                storage.get('session_uid', function (resp) {
-                                    var sessionID = resp.session_uid;
-                                    storage.get('session_date', function (resp) {
-                                        var session_date = new Date(resp.session_date);
-                                        if ((sessionID) && (((new Date) - session_date) < (60 * 60 * 1000))) { //eine Stunde Abstand
-                                            sendFeedToServer(processedFeed, lastScrolledUntil, sessionID);
-                                        } else {
-                                            sendFeedToServer(processedFeed, lastScrolledUntil, null);
-                                        }
-                                    });
-                                });
-                            }
+                            sendFeedToServer(processedFeed, lastScrolledUntil);
                         }
                     } else {
                         console.log("something went wrong");
@@ -458,8 +404,7 @@ ext.runtime.onMessage.addListener(
                 });
                 break;
 
-            case "opened-facebook":                 // we need this to update our Messages and Configs
-                storage.set({"session_date": 0}, function () {});
+            case "opened-facebook":                 // update messages and config
                 checkIfMessageUpdate();
                 if (isUsingDevConfig()) {
                     storage.get('devconfig', function (resp) {
@@ -482,6 +427,8 @@ ext.runtime.onMessage.addListener(
                         }
                     });
                 }
+                console.log('resetting Facebook session');
+                storage.set({session_uid:null}, function() {});
                 break;
 
             case "getInteractionSelectors":
@@ -524,7 +471,8 @@ ext.runtime.onMessage.addListener(
                         });
                     }
                 });
-                break;
+                return true;
+                //break;
 
             case "markRead":
                 console.log('marking message read');
@@ -588,8 +536,7 @@ ext.runtime.onMessage.addListener(
                                     })
                                     .then(function(response) {
                                         storage.set({
-                                                session_uid: response.data.result['uid'],
-                                                session_date: (new Date()).toString()
+                                                session_uid: response.data.result['uid']
                                             }, function () {});
                                     })
                                     .catch(function(error) {
@@ -612,59 +559,77 @@ ext.runtime.onMessage.addListener(
  * @param (int) scrolledUntil : specifies how deep the user scrolled into his feed
  * @param (int) sessionID : session ID of the last session used, can be null if this is the first post today/in the last hour
 */
-function sendFeedToServer(feed, scrolledUntil, sessionID) {
-    if (sessionID != null) {
-        feed['session_uid'] = sessionID;
-    }
+function sendFeedToServer(feed, scrolledUntil) {
+    feedToServerQueue.push({feed: feed, scrolledUntil: scrolledUntil});
+    processFeedQueue();
+}
 
-    var manifestData = ext.runtime.getManifest();
-    feed['plugin_version'] = manifestData.version;
-    storage.get(configPlace, function (resp) {
-        var config = resp.config;
-        var version = config.version;
-        if (version) {
-            feed['config_version'] = version;
-        }
-
-        feed['browser'] = navigator.userAgent;
-        feed['language'] = navigator.language;
-        feed['scrolled_until'] = scrolledUntil;
-
-        storage.get('identifier_password', function (resp) {
-            var password = resp.identifier_password;
-            if (password) {
-                storage.get('plugin_uid', function (resp) {
-                    var plugin_uid = resp.plugin_uid;
-                    if (plugin_uid) {
-                        var sNonce = CryptoJS.lib.WordArray.random(16).toString();
-                        var sBody = feed;
-                        var sUrl = 'https://fbforschung.de/posts'; //serverside url to call
-                        axios.post(sUrl, sBody,
-                            {
-                                headers: {
-                                    "X-Auth-Key": sNonce,
-                                    "X-Auth-Checksum": CryptoJS.HmacSHA1(sUrl + JSON.stringify(sBody) + sNonce, password).toString(),
-                                    "X-Auth-Plugin": plugin_uid,
-                                    "Content-Type": "application/json"
-                                }
-                            })
-                            .then(function(response) {
-                                storage.set({
-                                    session_uid: response.data.result['uid'],
-                                    session_date: (new Date()).toString()
-                                }, function () {});
-                            })
-                            .catch(function(error) {
-                                storage.set({
-                                    toBeSent: feed,
-                                    createdAt: (new Date()).toString()
-                                }, function () {});
-                            });
-                    }
-                });
+function processFeedQueue() {
+    if(!feedQueueInProgress && feedToServerQueue.length > 0) {
+        feedQueueInProgress = true;
+        var feedToServer = feedToServerQueue.shift(),
+            manifestData = ext.runtime.getManifest();
+        storage.get('session_uid', function (resp) {
+            if (typeof(resp.session_uid) !== 'undefined') {
+                feedToServer.feed['session_uid'] = resp.session_uid;
             }
+
+            feedToServer.feed['plugin_version'] = manifestData.version;
+            storage.get(configPlace, function (resp) {
+                if(typeof(resp.config) !== 'undefined') {
+                    var config = resp.config;
+                    var version = config.version;
+                    if (version) {
+                        feedToServer.feed['config_version'] = version;
+                    }
+
+                    feedToServer.feed['browser'] = navigator.userAgent;
+                    feedToServer.feed['language'] = navigator.language;
+                    feedToServer.feed['scrolled_until'] = feedToServer.scrolledUntil;
+
+                    storage.get('identifier_password', function (resp) {
+                        var password = resp.identifier_password;
+                        if (password) {
+                            storage.get('plugin_uid', function (resp) {
+                                var plugin_uid = resp.plugin_uid;
+                                if (plugin_uid) {
+                                    var sNonce = CryptoJS.lib.WordArray.random(16).toString();
+                                    var sBody = feedToServer.feed;
+                                    var sUrl = 'https://fbforschung.de/posts'; //serverside url to call
+                                    axios.post(sUrl, sBody,
+                                        {
+                                            headers: {
+                                                "X-Auth-Key": sNonce,
+                                                "X-Auth-Checksum": CryptoJS.HmacSHA1(sUrl + JSON.stringify(sBody) + sNonce, password).toString(),
+                                                "X-Auth-Plugin": plugin_uid,
+                                                "Content-Type": "application/json"
+                                            }
+                                        })
+                                        .then(function (response) {
+                                            storage.set({
+                                                session_uid: response.data.result['uid']
+                                            }, function () {
+                                                feedQueueInProgress = false;
+                                                processFeedQueue();
+                                            });
+                                        })
+                                        .catch(function (error) {
+                                            storage.set({
+                                                toBeSent: feed,
+                                                createdAt: (new Date()).toString()
+                                            }, function () {
+                                                feedQueueInProgress = false;
+                                                processFeedQueue();
+                                            });
+                                        });
+                                }
+                            });
+                        }
+                    });
+                }
+            });
         });
-    });
+    }
 }
 
 
@@ -745,7 +710,7 @@ function getAttribute(attribute, domNode) {
 
 
 /* handels the Action for a given config node and domNode and appends it to the currentObject */
-function handleActions(config, domNode, currentObject) {
+function handleActions(config, domNode, currentObject, domRects) {
     if (config.attribute.startsWith("attr-")) {
         currentObject[config.column] = domNode.getAttribute(config.attribute.substr(5, config.attribute.length - 5));
     } else {
@@ -777,23 +742,31 @@ function handleActions(config, domNode, currentObject) {
                         break;
 
                     case 'width':
-                        currentObject[config.column] = domNode.id + "width";
-                        sendRecRequest(domNode.id);
+                        currentObject[config.column] = -1;
+                        if(typeof(domRects[domNode.id]) !== 'undefined') {
+                            currentObject[config.column] = domRects[domNode.id].width;
+                        }
                         break;
 
                     case 'height':
-                        currentObject[config.column] = domNode.id + "height";
-                        sendRecRequest(domNode.id);
+                        currentObject[config.column] = -1;
+                        if(typeof(domRects[domNode.id]) !== 'undefined') {
+                            currentObject[config.column] = domRects[domNode.id].height;
+                        }
                         break;
 
                     case 'top':
-                        currentObject[config.column] = domNode.id + "top";
-                        sendRecRequest(domNode.id);
+                        currentObject[config.column] = -1;
+                        if(typeof(domRects[domNode.id]) !== 'undefined') {
+                            currentObject[config.column] = domRects[domNode.id].top - domRects['body'].top;
+                        }
                         break;
 
                     case 'left':
-                        currentObject[config.column] = domNode.id + "left";
-                        sendRecRequest(domNode.id);
+                        currentObject[config.column] = -1;
+                        if(typeof(domRects[domNode.id]) !== 'undefined') {
+                            currentObject[config.column] = domRects[domNode.id].left;
+                        }
                         break;
 
                     default:

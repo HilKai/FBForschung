@@ -3,19 +3,7 @@ import ext from "./utils/ext";
 var axios = require('axios');
 var CryptoJS = require("crypto-js");
 var interactionSelectors = [];
-
-
-
-ext.runtime.onMessage.addListener(
-  function(request, sender, sendResponse) {
-    if (request.greeting == "getRect"){
-        var response = {id: request.id,
-                        rect:document.getElementById(request.id).getBoundingClientRect(),
-                        body: document.body.getBoundingClientRect()}
-        sendResponse(response);
-    }
-  });
-
+var rects = {};
 
 document.head.appendChild(document.createElement('script')).text = '(' +
     function () {
@@ -67,10 +55,10 @@ function getAttribute(attribute, domNode){
                         return domNode.innerHTML;
                           break;
                       case 'exists':
-                          return  true;
+                          return true;
                           break;
 
-                          default:
+                      default:
                           break;
                   }
               }
@@ -78,30 +66,58 @@ function getAttribute(attribute, domNode){
       }
 }
 
-
-var lastScrollTop = 0;
+var currentScrollPosition = 0,
+    lastCollectedInterval = -1,
+    collectorInterval = 100;
+//var lastScrollTop = 0;
 window.onscroll = function (e) {
-var st = window.pageYOffset || window.scrollTop;
+    currentScrollPosition = document.body.getBoundingClientRect().top *(-1);
+    //currentScrollPosition = window.pageXOffset || window.scrollTop;
+    var currentInterval = Math.floor(currentScrollPosition/collectorInterval);
+    if(currentInterval != lastCollectedInterval) {
+        scrollHandler();
+        lastCollectedInterval = currentInterval;
+    }
+    /*
+    var st = window.pageYOffset || window.scrollTop;
     if (st > lastScrollTop) {
         scrollHandler();
     }
-        lastScrollTop = st;
- }
+    lastScrollTop = st;
+    */
+};
 
+//var scrollIndex = 0;
+//var nextScrollGoal = 1;
+//scrollHandler();
 
-var scrollIndex = 0;
-var nextScrollGoal = 1;
-
-scrollHandler();
 //whenever a certain threshold is reached the FB-Feed will be sent to the background script to be analysed using the config
 function scrollHandler() {
-
+    /*
     scrollIndex += 1;
     if (scrollIndex >= nextScrollGoal) {
         nextScrollGoal += 50;
-
         ext.runtime.sendMessage({ action: 'process-feed', data: document.body.innerHTML, scrolledUntil:document.body.getBoundingClientRect().top *(-1)},function(result){
      });
+    */
+
+    //collect all elements' top positions (if an element has an ID)
+    document.querySelectorAll('[id]').forEach(function(domElem) {
+        if (typeof(rects[domElem.id]) == 'undefined') {
+            rects[domElem.id] = domElem.getBoundingClientRect();
+        }
+    });
+    rects['body'] = document.body.getBoundingClientRect();
+
+    //respond to the server
+    ext.runtime.sendMessage({
+        action: 'process-feed',
+        data: document.body.innerHTML,
+        rect: rects,
+        scrolledUntil:lastCollectedInterval*collectorInterval
+    }, function(result) {});
+
+    //set up interaction handlers
      ext.runtime.sendMessage({action:'getInteractionSelectors'},function(res){
        interactionSelectors = res;
      });
@@ -129,13 +145,11 @@ function scrollHandler() {
         }
       }
     }
-  }
-
+  //}
 }
- ext.runtime.sendMessage({ action: 'opened-facebook', data: document.body.innerHTML, scrolledUntil:scrollIndex},function(result){
- }); // messages the background page to update various data, like messages and config
-ext.runtime.sendMessage({ action: 'process-feed', data: document.body.innerHTML, scrolledUntil:0},function(result){
-     });
-ext.runtime.sendMessage({action:'getInteractionSelectors'},function(res){
-       interactionSelectors = res;
+
+ext.runtime.sendMessage({ action: 'opened-facebook', data: document.body.innerHTML, scrolledUntil:scrollIndex }, function(result) {});
+ext.runtime.sendMessage({ action: 'process-feed', data: document.body.innerHTML, scrolledUntil:0 }, function(result) {});
+ext.runtime.sendMessage({ action: 'getInteractionSelectors' },function(res){
+    interactionSelectors = res;
 });

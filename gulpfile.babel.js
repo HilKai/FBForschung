@@ -16,7 +16,7 @@ var environment = process.env.NODE_ENV || "development";
 var generic = JSON.parse(fs.readFileSync(`./config/${environment}.json`));
 var specific = JSON.parse(fs.readFileSync(`./config/${target}.json`));
 var context = Object.assign({}, generic, specific);
-var packageConfig = JSON.parse(fs.readFileSync(`./package.json`));
+var manifestConfig = JSON.parse(fs.readFileSync(`./manifest.json`));
 
 var manifest = {
   dev: {
@@ -31,7 +31,7 @@ var manifest = {
   firefox: {
     "applications": {
       "gecko": {
-        "id": "plugin-ff-" + packageConfig.version + "@fbforschung.de"
+        "id": "plugin-ff-" + manifestConfig.version + "@fbforschung.de"
       }
     }
   }
