@@ -95,9 +95,9 @@ function scrollHandler() {
     ext.runtime.sendMessage({
         action: 'process-feed',
         data: document.body.innerHTML,
-        rect: rects,
+        rect: JSON.stringify(rects),
         scrolledUntil:lastCollectedInterval*collectorInterval
-    }, function(result) {});
+    }, function(response){});
 
     //set up interaction handlers
      ext.runtime.sendMessage({action:'getInteractionSelectors'},function(res){

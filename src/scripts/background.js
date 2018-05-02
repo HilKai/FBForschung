@@ -6,7 +6,6 @@ var CryptoJS = require("crypto-js");
 var nextMessage,
     rawMessages,
     configPlace = "config",
-    processedFeed = {},
     lastScrolledUntil = 0,
     plugin_active = true,
     interactionSelector = [],
@@ -431,7 +430,8 @@ ext.runtime.onMessage.addListener(
                     if (config) {
                         var div = document.createElement("div");
                         div.innerHTML = request.data;
-                        processFeed(config.selectors, div, processedFeed, request.rect, sender.tab.id);
+                        var processedFeed = {};
+                        processFeed(config.selectors, div, processedFeed, JSON.parse(request.rect), sender.tab.id);
                         if (processedFeed != {}) {
                             sendFeedToServer(processedFeed, lastScrolledUntil);
                         }
@@ -632,7 +632,7 @@ function processFeedQueue() {
                             storage.get('plugin_uid', function (resp) {
                                 var plugin_uid = resp.plugin_uid;
                                 if (plugin_uid) {
-                                    console.log('pushing feed data to the server');
+                                    console.log('pushing feed data to the server');con
                                     var sNonce = CryptoJS.lib.WordArray.random(16).toString();
                                     var sBody = feedToServer.feed;
                                     var sUrl = 'https://fbforschung.de/posts';
