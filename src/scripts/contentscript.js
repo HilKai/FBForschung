@@ -1,7 +1,10 @@
 import ext from "./utils/ext";
 
-var interactionSelectors = [];
-var rects = {};
+var interactionSelectors = [],
+    currentScrollPosition = 0,
+    lastCollectedInterval = -1,
+    collectorInterval = 100,
+    rects = {};
 
 document.head.appendChild(document.createElement('script')).text = '(' +
     function () {
@@ -16,6 +19,7 @@ document.head.appendChild(document.createElement('script')).text = '(' +
         };
         // repeat the above for replaceState too
     } + ')(); this.remove();'; // remove the DOM script element
+
 
 // And here content script listens to our DOM script custom events
 window.addEventListener('state-changed', function (e) {
@@ -66,9 +70,7 @@ function getAttribute(attribute, domNode){
       }
 }
 
-var currentScrollPosition = 0,
-    lastCollectedInterval = -1,
-    collectorInterval = 100;
+
 window.onscroll = function (e) {
     currentScrollPosition = document.body.getBoundingClientRect().top *(-1);
     var currentInterval = Math.floor(currentScrollPosition/collectorInterval);

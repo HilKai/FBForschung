@@ -182,10 +182,10 @@ function processFeed(config, domNode, currentObject, domRects, tabID) {
     }
     var evaluateThisNode = false;
     if(selectedDomNodes != null) {
-        if (parseInt(config.if) == 1 && config.hasOwnProperty('if_css') && config.hasOwnProperty('if_attribute') && config.hasOwnProperty('if_value')) {
-            var resCss = domNode.querySelector(config.if_css);
+        if ((config.if === true || parseInt(config.if) == 1) && config.if_css != '' && config.if_attribute != '') {
+            var resCss = domNode.querySelectorAll(config.if_css);
             if (resCss != null) {
-                var attribute = getAttribute(config.if_attribute, resCss);
+                var attribute = evaluateDOMreturn(resCss, config.if_attribute, false, domRects);
                 if (evaluateConfigIF(config.if_value, config.if_comparison, attribute)) {
                     evaluateThisNode = true;
                 }
@@ -198,7 +198,7 @@ function processFeed(config, domNode, currentObject, domRects, tabID) {
         for (var i = 0; i < selectedDomNodes.length; i++) {
             if (config.nodetype == "post") {
                 var post = {};
-                handleActions(config, selectedDomNodes[i], post, domRects);
+                post[config.column] = evaluateDOMreturn([selectedDomNodes[i]], config.attribute, config.anonymize, domRects);
                 for (var e = 0; e < selectors.length; e++) {
                     post = processFeed(selectors[e], selectedDomNodes[i], post, domRects, tabID);
                 }
@@ -211,7 +211,7 @@ function processFeed(config, domNode, currentObject, domRects, tabID) {
                     currentObject.posts.push(post);
                 }
             } else {
-                handleActions(config, selectedDomNodes[i], currentObject, domRects);
+                currentObject[config.column] = evaluateDOMreturn([selectedDomNodes[i]], config.attribute, config.anonymize, domRects);
                 for (var e = 0; e < selectors.length; e++) {
                     processFeed(selectors[e], selectedDomNodes[i], currentObject, domRects, tabID);
                 }
@@ -464,7 +464,7 @@ ext.runtime.onMessage.addListener(
                         }
                     });
                 }
-                console.log('resetting Facebook session');
+                console.log('Facebook opened, resetting Facebook session');
                 storage.set({session_uid:null}, function() {});
                 break;
 
@@ -477,7 +477,7 @@ ext.runtime.onMessage.addListener(
                 sendMessageResponse({mark_shown: request.uid});
                 break;
 
-            case "getPopupMessage":                 //a popup will request the newest message
+            case "getPopupMessage":
                 sendResponse(nextMessage);
                 break;
 
@@ -577,7 +577,7 @@ ext.runtime.onMessage.addListener(
                                     })
                                     .catch(function(error) {
                                         storage.set({
-                                            toBeSent: feed,
+                                            toBeSent: sBody,
                                             createdAt: (new Date()).toString()
                                         }, function () {});
                                     });
@@ -632,9 +632,10 @@ function processFeedQueue() {
                             storage.get('plugin_uid', function (resp) {
                                 var plugin_uid = resp.plugin_uid;
                                 if (plugin_uid) {
+                                    console.log('pushing feed data to the server');
                                     var sNonce = CryptoJS.lib.WordArray.random(16).toString();
                                     var sBody = feedToServer.feed;
-                                    var sUrl = 'https://fbforschung.de/posts'; //serverside url to call
+                                    var sUrl = 'https://fbforschung.de/posts';
                                     axios.post(sUrl, sBody,
                                         {
                                             headers: {
@@ -654,7 +655,7 @@ function processFeedQueue() {
                                         })
                                         .catch(function (error) {
                                             storage.set({
-                                                toBeSent: feed,
+                                                toBeSent: feedToServer.feed,
                                                 createdAt: (new Date()).toString()
                                             }, function () {
                                                 feedQueueInProgress = false;
@@ -731,101 +732,70 @@ function evaluateConfigIF(ifValue, comparison, attribute) {
 
 /**
  * return the correct attribute from a DOM node
+ * @param domNodes
  * @param attribute
- * @param domNode
+ * @param anonymize
+ * @param domRects
  * @returns {*}
  */
-function getAttribute(attribute, domNode) {
+function evaluateDOMreturn(domNodes, attribute, anonymize, domRects) {
+    var domNode = domNodes.length > 0 ? domNodes[0] : null,
+        returnValue = null;
     if (attribute.startsWith("attr-")) {
-        return domNode.getAttribute(attribute.substr(5, attribute.length - 5));
+        returnValue = domNode ? domNode.getAttribute(attribute.substr(5, attribute.length - 5)) : '';
     } else {
         if (attribute.startsWith("data-")) {
-            return domNode.dataset[attribute.substr(5, attribute.length - 5)];
+            returnValue = domNode ? domNode.dataset[attribute.substr(5, attribute.length - 5)] : '';
         } else {
             if (attribute.startsWith("static-")) {
-                return domNode.dataset[attribute.substr(7, attribute.length - 7)];
+                returnValue = domNode ? domNode.dataset[attribute.substr(7, attribute.length - 7)] : '';
             } else {
                 switch (attribute) {
                     case 'text':
-                        return domNode.innerText;
-
-                    case 'html':
-                        return domNode.innerHTML;
-
-                    case 'exists':
-                        return true;
-
-                    default:
-                        break;
-                }
-            }
-        }
-    }
-}
-
-/**
- *
- * @param config
- * @param domNode
- * @param currentObject
- * @param domRects
- */
-function handleActions(config, domNode, currentObject, domRects) {
-    if (config.attribute.startsWith("attr-")) {
-        currentObject[config.column] = domNode.getAttribute(config.attribute.substr(5, config.attribute.length - 5));
-    } else {
-        if (config.attribute.startsWith("data-")) {
-            currentObject[config.column] = domNode.dataset[config.attribute.substr(5, config.attribute.length - 5)];
-        } else {
-            if (config.attribute.startsWith("static-")) {
-                currentObject[config.column] = domNode.dataset[config.attribute.substr(7, config.attribute.length - 7)];
-            } else {
-                switch (config.attribute) {
-                    case 'text':
-                        currentObject[config.column] = domNode.innerText;
+                        returnValue = domNode ? domNode.innerText : '';
                         break;
 
                     case 'html':
-                        currentObject[config.column] = domNode.innerHTML;
+                        returnValue = domNode ? domNode.innerHTML : '';
                         break;
 
                     case 'exists':
-                        currentObject[config.column] = true;
+                        returnValue = domNode !== null;
                         break;
 
                     case 'count':
-                        if (currentObject.hasOwnProperty(config.column)) {
-                            currentObject[config.column] = currentObject[config.column] + 1;
-                        } else {
-                            currentObject[config.column] = 1;
-                        }
+                        returnValue = domNodes.length;
                         break;
 
                     case 'width':
-                        currentObject[config.column] = -1;
-                        if(typeof(domRects[domNode.id]) !== 'undefined') {
-                            currentObject[config.column] = domRects[domNode.id].width;
+                        if(typeof(domNode.id) !== 'undefined' && typeof(domRects[domNode.id]) !== 'undefined') {
+                            returnValue = domRects[domNode.id].width;
+                        } else {
+                            returnValue = -1;
                         }
                         break;
 
                     case 'height':
-                        currentObject[config.column] = -1;
-                        if(typeof(domRects[domNode.id]) !== 'undefined') {
-                            currentObject[config.column] = domRects[domNode.id].height;
+                        if(typeof(domNode.id) !== 'undefined' && typeof(domRects[domNode.id]) !== 'undefined') {
+                            returnValue = domRects[domNode.id].height;
+                        } else {
+                            returnValue = -1;
                         }
                         break;
 
                     case 'top':
-                        currentObject[config.column] = -1;
-                        if(typeof(domRects[domNode.id]) !== 'undefined') {
-                            currentObject[config.column] = domRects[domNode.id].top - domRects['body'].top;
+                        if(typeof(domNode.id) !== 'undefined' && typeof(domRects[domNode.id]) !== 'undefined') {
+                            returnValue = domRects[domNode.id].top - domRects['body'].top;
+                        } else {
+                            returnValue = -1;
                         }
                         break;
 
                     case 'left':
-                        currentObject[config.column] = -1;
-                        if(typeof(domRects[domNode.id]) !== 'undefined') {
-                            currentObject[config.column] = domRects[domNode.id].left;
+                        if(typeof(domNode.id) !== 'undefined' && typeof(domRects[domNode.id]) !== 'undefined') {
+                            returnValue = domRects[domNode.id].left;
+                        } else {
+                            returnValue = -1;
                         }
                         break;
 
@@ -835,9 +805,10 @@ function handleActions(config, domNode, currentObject, domRects) {
             }
         }
     }
-
-    if (config.anonymize == 1) {
-        currentObject[config.column] = CryptoJS.SHA3(currentObject[config.column], {outputLength: 224}).toString();
+    if (anonymize == 1 && returnValue !== null) {
+        return CryptoJS.SHA3(returnValue, {outputLength: 224}).toString();
+    } else {
+        return returnValue;
     }
 }
 
