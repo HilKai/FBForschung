@@ -55,9 +55,9 @@ function isUsingDevConfig() {
  * @param _fCallback    function to call after finishing
  */
 function getConfig(_fCallback) {
-    console.log('fetching current main config');
     getRequest("https://fbforschung.de/config", '', function(response) {
         storage.set({config: response.result}, function () {
+            console.log('new main config set (now version ' + response.result.version + ')');
             if(_fCallback) {
                 _fCallback(response.result);
             }
@@ -70,9 +70,9 @@ function getConfig(_fCallback) {
  * @param _fCallback    function to call after finishing
  */
 function getDevConfig(_fCallback) {
-    console.log('fetching current dev config');
     getRequest("https://fbforschung.de/config/dev", '', function(response) {
         storage.set({devconfig: response.result}, function () {
+            console.log('new dev config set (now version ' + response.result.version + ')');
             if(_fCallback) {
                 _fCallback(response.result);
             }
@@ -310,6 +310,7 @@ function sendMessageResponse(body) {
 function handleMessageCheck(data) {
     rawMessages = data.result;
     if (data.result.length > 0) {
+        console.log(data.result.length + ' new messages retrieved');
         nextMessage = data.result[0];
         showNextMessage();
     }
@@ -354,8 +355,10 @@ function closeWindow(messageID) {
 function handleConfigCheck(_configResponse) {
     if (_configResponse.is_latest_version == false) {
         if (isUsingDevConfig()) {
+            console.log('DEV config in use but out of date, renewing ...');
             getDevConfig();
         } else {
+            console.log('MAIN config in use but out of date, renewing ...');
             getConfig();
         }
     }
@@ -442,12 +445,12 @@ ext.runtime.onMessage.addListener(
                 break;
 
             case "opened-facebook":                 // update messages and config
+                console.log('Facebook opened, let us check for new messages, new config, and reset the session');
                 checkIfMessageUpdate();
                 if (isUsingDevConfig()) {
                     storage.get('devconfig', function (resp) {
                         var config = resp.config;
                         if (config) {
-                            console.log('checking if dev config is up to date');
                             getRequest('https://fbforschung.de/config/dev/' + config.version, null, handleConfigCheck);
                         } else {
                             getDevConfig();
@@ -457,16 +460,17 @@ ext.runtime.onMessage.addListener(
                     storage.get('config', function (resp) {
                         var config = resp.config;
                         if (config) {
-                            console.log('checking if main config is up to date');
                             getRequest('https://fbforschung.de/config/' + config.version, null, handleConfigCheck);
                         } else {
                             getConfig();
                         }
                     });
                 }
-                console.log('Facebook opened, resetting Facebook session');
-                storage.set({session_uid:null}, function() {});
-                break;
+                storage.set({session_uid: null}, function() {
+                    sendResponse({});
+                });
+                return true;
+                //break;
 
             case "getInteractionSelectors":
                 sendResponse(interactionSelector);
