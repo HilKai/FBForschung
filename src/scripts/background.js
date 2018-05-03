@@ -38,7 +38,6 @@ storage.get("usingDevConfig", function (resp) {
  * checks for new messages from the server
  */
 function checkIfMessageUpdate() {
-    console.log('checking for new messages');
     getRequest('https://fbforschung.de/message', null, handleMessageCheck);
 }
 

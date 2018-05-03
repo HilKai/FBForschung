@@ -1,7 +1,5 @@
 import ext from "./utils/ext";
 import storage from "./utils/storage";
-var axios = require('axios');
-var CryptoJS = require("crypto-js");
 import { sha3_512 } from 'js-sha3';
 
 
@@ -21,9 +19,9 @@ optionsLink.addEventListener("click", function(e) {
 				   document.getElementById('eye').value;
 		storage.set({identifier_password:hashedPass,identifier_human:human}, function() {
 				ext.runtime.sendMessage({ action: 'register' }, function(result) {
-				if(result.worked == true){
-					window.location.href = "https://www.facebook.com/";
-				}
+					if(result.worked == true){
+						window.location.href = "https://www.facebook.com/";
+					}
 				});
 			});
 	} else {
@@ -33,6 +31,10 @@ optionsLink.addEventListener("click", function(e) {
 	}
 })
 
+//fill version
+ext.runtime.sendMessage({action:"getOption"}, function(response) {
+    	document.getElementById("version").innerText = 'Plugin-Version: ' + response.plugin;
+	});
 //initially show step 1
 document.querySelector(".stepwise.step1").style.display = 'block';
 //handle next links
