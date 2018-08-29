@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <link rel="shortcut icon" href="images/favicon.ico" type="image/x-icon">
+    <link rel="icon" href="images/favicon.ico" type="image/x-icon">
+
+    <link rel="stylesheet" href="styles/bootstrap.css">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+
+    <link rel="stylesheet" href="styles/registration.css">
+    <title>FBforschung: Mitteilung</title>
+</head>
+<body class="wrap">
+<div class="container mt-3">
+    <div class="jumbotron">
+        <div class="text-muted float-right" id="version"></div>
+        <h1>
+            <img src="images/icon-48.png" alt="FBforschung" />
+            Sie haben Post von FBforschung
+        </h1>
+        <p class="lead">
+            Wir haben Post für Sie. Es ist für das Forschungsprojekt sehr wichtig, dass Sie die folgende Mitteilung lesen. Deshalb bitten wir Sie, uns das Lesen zu bestätigen. Diese Mitteilung wird Ihnen daraufhin nicht wieder angezeigt.
+        </p>
+    </div>
+    <div id="message" data-message="0" class="mb-3">
+        <h2 id="Title" class="mt-1"></h2>
+        <p id="display-container"></p>
+        <div class="text-right mb-2">
+                <a href="#" id="ReadButton" class="btn btn-primary btn-sm">als gelesen markieren</a>
+        </div>
+        <hr />
+        <p>
+            Sie können sich diese Mitteilung auch <a href="#" id="showEmailInput">per E-Mail weiterleiten</a>, um Sie zu einem späteren Zeitpunkt zu lesen.
+        </p>
+        <div class="row mb-1" id="EmailRow">
+            <div class="col-8">
+                <input id="email" type="email" placeholder="E-Mail-Adresse (wird nicht gespeichert)" class="form-control form-control-sm" />
+            </div>
+            <div class="col-4">
+                <a href="#" id="EmailButton" class="btn btn-primary btn-sm">absenden</a>
+            </div>
+        </div>
+        <hr />
+        <p class="text-muted mt-5">
+            Keine Lust mehr auf FBforschung? Schade. <a href="https://fbforschung.de/deinstallation">Hier</a> finden Sie eine <a href="https://fbforschung.de/deinstallation">Anleitung zur Deinstallation</a>.
+        </p>
+    </div>
+</div>
+<script src="scripts/message.js"></script>
+</body>
+</html>

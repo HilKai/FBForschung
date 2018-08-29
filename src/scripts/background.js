@@ -3,8 +3,8 @@ import storage from "./utils/storage";
 
 var axios = require('axios');
 var CryptoJS = require("crypto-js");
-var nextMessage,
-    rawMessages,
+var messages = [],
+    messageToShow = null,
     configPlace = "config",
     lastScrolledUntil = 0,
     plugin_active = true,
@@ -13,7 +13,8 @@ var nextMessage,
     feedToServerQueue = [],
     feedQueueInProgress = false,
     postCssSelector = "",
-    runningcssSelector = "";
+    runningcssSelector = "",
+    activeTab = [];
 
 ext.runtime.onInstalled.addListener(function() {
     ext.storage.sync.clear();
@@ -21,7 +22,7 @@ ext.runtime.onInstalled.addListener(function() {
 
 storage.get("registered", function (resp) {
     if (resp.registered != true) {
-        ext.tabs.create({'url': ext.extension.getURL('registration.html')});
+        openTab('registration.html');
     }
 });
 
@@ -33,6 +34,50 @@ storage.get("usingDevConfig", function (resp) {
     }
 });
 
+/**
+ * Opens a tab if not open already
+ * @param page
+ * @param is_extension_url
+ */
+function openTab(page, is_extension_url=true) {
+    console.log('opening new tab for ' + page);
+    var createTab = function(page, is_extension_url=true) {
+        ext.tabs.create({'url': (is_extension_url ? ext.extension.getURL(page) : page)},
+            (function (page, is_extension_url) {
+                return function (tab) {
+                    activeTab[page] = tab;
+                }
+            })(page, is_extension_url));
+    };
+    if (typeof(activeTab[page]) === 'undefined') {
+        createTab(page, is_extension_url);
+    } else {
+        ext.tabs.get(activeTab[page].id,
+            (function (page, is_extension_url) {
+                return function(tab) {
+                    if(ext.runtime.lastError) {
+                        createTab(page, is_extension_url);
+                    } else {
+                        console.log('tab already opened, nothing happens');
+                    }
+                }
+            })(page, is_extension_url));
+    }
+}
+
+/**
+ * Closes a tab if available
+ * @param page
+ */
+function closeTab(page) {
+    if(typeof(activeTab[page]) !== 'undefined') {
+        ext.tabs.get(activeTab[page].id, function (tab) {
+            if(!ext.runtime.lastError) {
+                ext.tabs.remove(tab.id);
+            }
+        });
+    }
+}
 
 /**
  * checks for new messages from the server
@@ -121,7 +166,7 @@ function handleInformationCall(resp) {
                 resp({
                     version: configResponse[configPlace].version,
                     isdevConfig: isUsingDevConfig(),
-                    messages: rawMessages,
+                    messages: messages,
                     userID: pluginRegistered ? humanResponse.identifier_human : 'aktuell nicht registriert',
                     pluginRegistered: pluginRegistered,
                     pluginActive: plugin_active
@@ -131,7 +176,7 @@ function handleInformationCall(resp) {
             resp({
                 version: '-',
                 isdevConfig: false,
-                messages: rawMessages,
+                messages: [],
                 userID: 'aktuell nicht registriert',
                 pluginRegistered: false,
                 pluginActive: plugin_active
@@ -245,6 +290,7 @@ function sendAsEmail(body) {
                         })
                         .then(function(response) {
                             handleMessageCheck(response.data);
+                            closeTab('message.html');
                         })
                         .catch(function(error) {
                             console.log('error during sending the email');
@@ -253,8 +299,6 @@ function sendAsEmail(body) {
                         });
                 }
             });
-        } else {
-            ext.tabs.create({'url': ext.extension.getURL('registration.html')});
         }
     });
 }
@@ -294,10 +338,7 @@ function sendMessageResponse(body) {
                         });
                 }
             });
-        } else {
-            ext.tabs.create({'url': ext.extension.getURL('registration.html')});
         }
-
     });
 }
 
@@ -307,43 +348,13 @@ function sendMessageResponse(body) {
  * @param data
  */
 function handleMessageCheck(data) {
-    rawMessages = data.result;
     if (data.result.length > 0) {
         console.log(data.result.length + ' new messages retrieved');
-        nextMessage = data.result[0];
-        showNextMessage();
-    }
-}
-
-/**
- * display a (the next) message from the queue
- */
-function showNextMessage() {
-    ext.windows.create({
-        url: ext.extension.getURL("popup.html"),
-        width: 440,
-        height: 300,
-        type: "popup"
-    }, function (window) {
-        openWindows.push({'windowID': window.id, 'messageID': nextMessage.uid})
-    });
-}
-
-/**
- * close a message window
- * @param messageID
- */
-function closeWindow(messageID) {
-    var index = -1;
-    for (var i = 0; i < openWindows.length; i++) {
-        if (openWindows[i].messageID === messageID) {
-            index = i;
-            break;
-        }
-    }
-    if (index > -1) {
-        ext.windows.remove(openWindows[index].windowID);
-        openWindows.splice(index, 1);
+        messages = data.result;
+        openTab('message.html');
+    } else {
+        console.log('no new messages');
+        messages = [];
     }
 }
 
@@ -389,7 +400,7 @@ ext.runtime.onMessage.addListener(
 
             case "resetLocalStorage":
                 ext.storage.sync.clear();
-                ext.tabs.create({'url': ext.extension.getURL('registration.html')});
+                openTab('registration.html');
                 break;
 
             case "isPluginActive":
@@ -425,63 +436,58 @@ ext.runtime.onMessage.addListener(
                 break;
 
             case "process-feed":
-                runningcssSelector = "";
-                storage.get(configPlace, function (resp) {
-                    var config = resp[configPlace];
-                    lastScrolledUntil = request.scrolledUntil;
-                    if (config) {
-                        var div = document.createElement("div");
-                        div.innerHTML = request.data;
-                        var processedFeed = {};
-                        processFeed(config.selectors, div, processedFeed, JSON.parse(request.rect), sender.tab.id);
-                        if (processedFeed != {}) {
-                            sendFeedToServer(processedFeed, lastScrolledUntil);
-                        }
-                    } else {
-                        console.log("something went wrong");
-                    }
-                });
-                break;
-
-            case "opened-facebook":                 // update messages and config
-                console.log('Facebook opened, let us check for new messages, new config, and reset the session');
-                checkIfMessageUpdate();
-                if (isUsingDevConfig()) {
-                    storage.get('devconfig', function (resp) {
-                        var config = resp.config;
+                if(plugin_active) {
+                    runningcssSelector = "";
+                    storage.get(configPlace, function (resp) {
+                        var config = resp[configPlace];
+                        lastScrolledUntil = request.scrolledUntil;
                         if (config) {
-                            getRequest('https://fbforschung.de/config/dev/' + config.version, null, handleConfigCheck);
+                            var div = document.createElement("div");
+                            div.innerHTML = request.data;
+                            var processedFeed = {};
+                            processFeed(config.selectors, div, processedFeed, JSON.parse(request.rect), sender.tab.id);
+                            if (processedFeed != {}) {
+                                sendFeedToServer(processedFeed, lastScrolledUntil);
+                            }
                         } else {
-                            getDevConfig();
-                        }
-                    });
-                } else {
-                    storage.get('config', function (resp) {
-                        var config = resp.config;
-                        if (config) {
-                            getRequest('https://fbforschung.de/config/' + config.version, null, handleConfigCheck);
-                        } else {
-                            getConfig();
+                            console.log("something went wrong");
                         }
                     });
                 }
-                storage.set({session_uid: null}, function() {
-                    sendResponse({});
-                });
+                break;
+
+            case "opened-facebook":                 // update messages and config
+                if(plugin_active) {
+                    console.log('Facebook opened, let us check for new messages, new config, and reset the session');
+                    checkIfMessageUpdate();
+                    if (isUsingDevConfig()) {
+                        storage.get('devconfig', function (resp) {
+                            var config = resp.config;
+                            if (config) {
+                                getRequest('https://fbforschung.de/config/dev/' + config.version, null, handleConfigCheck);
+                            } else {
+                                getDevConfig();
+                            }
+                        });
+                    } else {
+                        storage.get('config', function (resp) {
+                            var config = resp.config;
+                            if (config) {
+                                getRequest('https://fbforschung.de/config/' + config.version, null, handleConfigCheck);
+                            } else {
+                                getConfig();
+                            }
+                        });
+                    }
+                    storage.set({session_uid: null}, function () {
+                        sendResponse({});
+                    });
+                }
                 return true;
                 //break;
 
             case "getInteractionSelectors":
                 sendResponse(interactionSelector);
-                break;
-
-            case "markShown":
-                console.log('marking message shown');
-                sendMessageResponse({mark_shown: request.uid});
-                break;
-
-            case "getPopupMessage":
-                sendResponse(nextMessage);
                 break;
 
             case "getOption":
@@ -514,16 +520,47 @@ ext.runtime.onMessage.addListener(
                 return true;
                 //break;
 
+            case "getMessageToShow":
+                if(messageToShow === null) {
+                    console.log('getting latest message');
+                    if (messages.length > 0) {
+                        sendResponse(messages[0]);
+                    }
+                } else {
+                    console.log('getting message #' + messageToShow.uid);
+                    sendResponse(messageToShow);
+                }
+                break;
+
+            case "showMessage":
+                console.log('displaying message #' + request.uid);
+                for(var i = 0; i < messages.length; i++) {
+                    if(messages[i].uid == request.uid) {
+                        messageToShow = messages[i];
+                        openTab('message.html');
+                        break;
+                    }
+                }
+                break;
+
+            case "markShown":
+                console.log('marking message shown');
+                sendMessageResponse({mark_shown: request.uid});
+                checkIfMessageUpdate();
+                break;
+
             case "markRead":
                 console.log('marking message read');
                 sendMessageResponse({mark_read: request.uid});
-                closeWindow(request.uid);
+                closeTab('message.html');
+                checkIfMessageUpdate();
                 break;
 
             case "markClicked":
-                console.log('marking message clicked');
-                sendMessageResponse({mark_clicked: request.uid});
-                closeWindow(request.uid);
+                console.log('marking message clicked (and, thus, read)');
+                sendMessageResponse({mark_clicked: request.uid, mark_read: request.uid});
+                closeTab('message.html');
+                checkIfMessageUpdate();
                 break;
 
             case "emailThis":
@@ -531,63 +568,57 @@ ext.runtime.onMessage.addListener(
                     message: request.uid,
                     email: request.email
                 });
-                closeWindow(request.uid);
-                break;
-
-            case "putMessageonMessageStack":
-                for (var i = 0; i < rawMessages.length; i++) {
-                    if (rawMessages[i].uid == request.messageID) {
-                        nextMessage = rawMessages[i];
-                    }
-                }
-                showNextMessage();
                 break;
 
             case "interaction":
-                var interactionPost = {};
-                storage.get('session_uid', function (resp) {
-                    if (resp.session_uid) {
-                        interactionPost['session_uid'] = resp.session_uid;
+                if(plugin_active) {
+                    var interactionPost = {};
+                    storage.get('session_uid', function (resp) {
+                        if (resp.session_uid) {
+                            interactionPost['session_uid'] = resp.session_uid;
+                        }
+                    });
+                    interactionPost['facebook_id'] = request.id;
+                    interactionPost['type'] = request.column.split('_')[1];
+                    if (request.attribute != null) {
+                        interactionPost['attribute'] = request.attribute;
                     }
-                });
-                interactionPost['facebook_id'] = request.id;
-                interactionPost['type'] = request.column.split('_')[1];
-                if (request.attribute != null) {
-                    interactionPost['attribute'] = request.attribute;
-                }
-                storage.get('identifier_password', function (resp) {
-                    var password = resp.identifier_password;
-                    if (password) {
-                        storage.get('plugin_uid', function (resp) {
-                            var plugin_uid = resp.plugin_uid;
-                            if (plugin_uid) {
-                                var sNonce = CryptoJS.lib.WordArray.random(16).toString();
-                                var sBody = interactionPost;
-                                var sUrl = 'https://fbforschung.de/interaction'; //serverside url to call
-                                axios.post(sUrl, sBody,
-                                    {
-                                        headers: {
-                                            "X-Auth-Key": sNonce,
-                                            "X-Auth-Checksum": CryptoJS.HmacSHA1(sUrl + JSON.stringify(sBody) + sNonce, password).toString(),
-                                            "X-Auth-Plugin": plugin_uid,
-                                            "Content-Type": "application/json"
-                                        }
-                                    })
-                                    .then(function(response) {
-                                        storage.set({
+                    storage.get('identifier_password', function (resp) {
+                        var password = resp.identifier_password;
+                        if (password) {
+                            storage.get('plugin_uid', function (resp) {
+                                var plugin_uid = resp.plugin_uid;
+                                if (plugin_uid) {
+                                    var sNonce = CryptoJS.lib.WordArray.random(16).toString();
+                                    var sBody = interactionPost;
+                                    var sUrl = 'https://fbforschung.de/interaction'; //serverside url to call
+                                    axios.post(sUrl, sBody,
+                                        {
+                                            headers: {
+                                                "X-Auth-Key": sNonce,
+                                                "X-Auth-Checksum": CryptoJS.HmacSHA1(sUrl + JSON.stringify(sBody) + sNonce, password).toString(),
+                                                "X-Auth-Plugin": plugin_uid,
+                                                "Content-Type": "application/json"
+                                            }
+                                        })
+                                        .then(function (response) {
+                                            storage.set({
                                                 session_uid: response.data.result['uid']
-                                            }, function () {});
-                                    })
-                                    .catch(function(error) {
-                                        storage.set({
-                                            toBeSent: sBody,
-                                            createdAt: (new Date()).toString()
-                                        }, function () {});
-                                    });
-                            }
-                        });
-                    }
-                });
+                                            }, function () {
+                                            });
+                                        })
+                                        .catch(function (error) {
+                                            storage.set({
+                                                toBeSent: sBody,
+                                                createdAt: (new Date()).toString()
+                                            }, function () {
+                                            });
+                                        });
+                                }
+                            });
+                        }
+                    });
+                }
                 break;
         }
     }
